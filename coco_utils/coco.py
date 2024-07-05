@@ -3,7 +3,6 @@ from utils import get_max_id_from_seq
 import logging
 from typing import List, Dict, Optional, Tuple
 from pydantic import BaseModel, Field
-import random
 
 
 class Image(BaseModel):
@@ -87,11 +86,11 @@ class COCO:
         return annotations
 
     def _update_attributes(self) -> None:
-        self.max_image_id = get_max_id_from_seq([elem.dict() for elem in self.images])
+        self.max_image_id = get_max_id_from_seq([elem.model_dump() for elem in self.images])
         self.max_ann_id = get_max_id_from_seq(
-            [elem.dict() for elem in self.annotations]
+            [elem.model_dump() for elem in self.annotations]
         )
-        self.max_cat_id = get_max_id_from_seq([elem.dict() for elem in self.categories])
+        self.max_cat_id = get_max_id_from_seq([elem.model_dump() for elem in self.categories])
 
         self.image_names_to_ids = {elem.file_name: elem.id for elem in self.images}
 
@@ -107,9 +106,9 @@ class COCO:
 
     def get_coco_dict(self) -> Dict:
         return {
-            "images": [elem.dict() for elem in self.images],
-            "annotation": [elem.dict() for elem in self.annotations],
-            "categories": [elem.dict() for elem in self.categories],
+            "images": [elem.model_dump() for elem in self.images],
+            "annotation": [elem.model_dump() for elem in self.annotations],
+            "categories": [elem.model_dump() for elem in self.categories],
         }
 
     def save_coco_dict(self, file_path: str):
@@ -129,10 +128,7 @@ class COCO:
 
     def split(self, ratio: float = 0.2, mode="random") -> Tuple["COCO", "COCO"]:
         if mode == "random":  # split at image level
-            # Split the images
-            random.shuffle(self.images)
-            split_index = int(len(self.images) * ratio)
-            images_A, images_B = self.images[:split_index], self.images[split_index:]
+            images_A, images_B = random_split(self.images, split_ratio=ratio)
             images_A_ids = {elem["id"] for elem in images_A}
             images_B_ids = {elem["id"] for elem in images_B}
 
@@ -156,16 +152,40 @@ class COCO:
                 ),
             )
 
-        elif mode == "stratified":
-            # Use categories to split per class
-            # Assumption is
+        elif mode == "strat_single_obj": # one object per image.
+            categ_to_ann_dict = {elem['id']: [] for elem in self.categories}
+            for ann in self.annotations:
+                categ_to_ann_dict[ann['category_id']].append(ann)
+            
+            ann_A_dict, ann_B_dict = stratified_split(categ_to_ann_dict)
+            annotations_A, annotations_B = [], []
+            image_ids_A, image_ids_B = set(), set()
+            for ann_list in ann_A_dict.values():
+                annotations_A.extend(ann_list)
+                image_ids_A.update(ann['image_id'] for ann in ann_list)
+            
+            for ann_list in ann_B_dict.values():
+                annotations_B.extend(ann_list)
+                image_ids_B.update(ann['image_id'] for ann in ann_list)
+            images_A = [elem for elem in self.images if elem['id'] in image_ids_A]
+            images_B = [elem for elem in self.images if elem['id'] in image_ids_B] 
+            return COCO(images=images_A, annotations=annotations_A, categories=self.categories), COCO(images=images_B, annotations=annotations_B, categories=self.categories)
+        elif mode == "strat_multi_obj": # multiple objects per image
             return COCO(), COCO()
 
     @classmethod
-    def from_json_file(cls, coco_file: str) -> "COCO":
-        with open(coco_file, "r") as f:
+    def from_json_file(cls, json_file: str) -> "COCO":
+        with open(json_file, "r") as f:
             coco_data = json.load(f)
         images = [Image(**elem) for elem in coco_data.get("images", [])]
         annotations = [Annotation(**elem) for elem in coco_data.get("annotations", [])]
         categories = [Category(**elem) for elem in coco_data.get("categories", [])]
         return cls(images, annotations, categories)
+
+
+
+if __name__ == "__main__":
+    from pathlib import Path
+    json_file = Path("/Users/faroukneurolabs/projects/FMS/dataset/coco.json")
+    coco = COCO.from_json_file(json_file)
+    print(len(coco.images))
