@@ -4,6 +4,10 @@ from sklearn.model_selection import train_test_split
 from typing import List
 import random
 
+def check_is_json(file_path:str)-> bool:
+    file_path =  Path(file_path)
+    return file_path.is_file() and file_path.suffix == ".json"
+
 
 def load_json_file(json_path: Path):
     with open(json_path, "r") as f:
