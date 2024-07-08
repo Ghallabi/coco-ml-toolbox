@@ -1,8 +1,9 @@
 import json
-from utils import get_max_id_from_seq
+from coco_tools.utils import get_max_id_from_seq
 import logging
 from typing import List, Dict, Optional, Tuple
 from pydantic import BaseModel, Field
+from coco_tools.utils import random_split, stratified_split
 
 
 class Image(BaseModel):
@@ -86,11 +87,15 @@ class COCO:
         return annotations
 
     def _update_attributes(self) -> None:
-        self.max_image_id = get_max_id_from_seq([elem.model_dump() for elem in self.images])
+        self.max_image_id = get_max_id_from_seq(
+            [elem.model_dump() for elem in self.images]
+        )
         self.max_ann_id = get_max_id_from_seq(
             [elem.model_dump() for elem in self.annotations]
         )
-        self.max_cat_id = get_max_id_from_seq([elem.model_dump() for elem in self.categories])
+        self.max_cat_id = get_max_id_from_seq(
+            [elem.model_dump() for elem in self.categories]
+        )
 
         self.image_names_to_ids = {elem.file_name: elem.id for elem in self.images}
 
@@ -129,8 +134,9 @@ class COCO:
     def split(self, ratio: float = 0.2, mode="random") -> Tuple["COCO", "COCO"]:
         if mode == "random":  # split at image level
             images_A, images_B = random_split(self.images, split_ratio=ratio)
-            images_A_ids = {elem["id"] for elem in images_A}
-            images_B_ids = {elem["id"] for elem in images_B}
+            print(len(images_A), len(images_B))
+            images_A_ids = {elem.id for elem in images_A}
+            images_B_ids = {elem.id for elem in images_B}
 
             # Separate annotations based on image ids
             annotations_A, annotations_B = [], []
@@ -152,25 +158,29 @@ class COCO:
                 ),
             )
 
-        elif mode == "strat_single_obj": # one object per image.
-            categ_to_ann_dict = {elem['id']: [] for elem in self.categories}
+        elif mode == "strat_single_obj":  # one object per image.
+            categ_to_ann_dict = {elem.id: [] for elem in self.categories}
             for ann in self.annotations:
-                categ_to_ann_dict[ann['category_id']].append(ann)
-            
+                categ_to_ann_dict[ann.category_id].append(ann)
+
             ann_A_dict, ann_B_dict = stratified_split(categ_to_ann_dict)
             annotations_A, annotations_B = [], []
             image_ids_A, image_ids_B = set(), set()
             for ann_list in ann_A_dict.values():
                 annotations_A.extend(ann_list)
-                image_ids_A.update(ann['image_id'] for ann in ann_list)
-            
+                image_ids_A.update(ann.image_id for ann in ann_list)
+
             for ann_list in ann_B_dict.values():
                 annotations_B.extend(ann_list)
-                image_ids_B.update(ann['image_id'] for ann in ann_list)
-            images_A = [elem for elem in self.images if elem['id'] in image_ids_A]
-            images_B = [elem for elem in self.images if elem['id'] in image_ids_B] 
-            return COCO(images=images_A, annotations=annotations_A, categories=self.categories), COCO(images=images_B, annotations=annotations_B, categories=self.categories)
-        elif mode == "strat_multi_obj": # multiple objects per image
+                image_ids_B.update(ann.image_id for ann in ann_list)
+            images_A = [elem for elem in self.images if elem.id in image_ids_A]
+            images_B = [elem for elem in self.images if elem.id in image_ids_B]
+            return COCO(
+                images=images_A, annotations=annotations_A, categories=self.categories
+            ), COCO(
+                images=images_B, annotations=annotations_B, categories=self.categories
+            )
+        elif mode == "strat_multi_obj":  # multiple objects per image
             return COCO(), COCO()
 
     @classmethod
@@ -181,11 +191,3 @@ class COCO:
         annotations = [Annotation(**elem) for elem in coco_data.get("annotations", [])]
         categories = [Category(**elem) for elem in coco_data.get("categories", [])]
         return cls(images, annotations, categories)
-
-
-
-if __name__ == "__main__":
-    from pathlib import Path
-    json_file = Path("/Users/faroukneurolabs/projects/FMS/dataset/coco.json")
-    coco = COCO.from_json_file(json_file)
-    print(len(coco.images))
