@@ -18,7 +18,7 @@ def split_cmd(args):
     if args.output_dir and Path(args.output_dir).is_dir():
         output_dir = Path(args.output_dir)
     else:
-        output_dir = Path(args.coco_file).parent
+        output_dir = Path(args.coco_path).parent
     
     coco_1.save_coco_dict(output_dir / "coco_train.json")
     coco_2.save_coco_dict(output_dir / "coco_test.json")
@@ -34,6 +34,12 @@ def merge_cmd(args):
         coco = COCO.from_json_file(coco_file)
         coco_base.extend(coco)
 
+    if args.output_dir and Path(args.output_dir).is_dir():
+        output_dir = Path(args.output_dir)
+    else:
+        output_dir = Path(coco_files[0]).parent
+    
+    coco_base.save_coco_dict(output_dir / "coco_merged.json")
     
 
 def crop_cmd(args):

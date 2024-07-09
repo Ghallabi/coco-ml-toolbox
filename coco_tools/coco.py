@@ -18,6 +18,9 @@ class Annotation(BaseModel):
     image_id: int
     category_id: int
     bbox: List[float]
+    segmentation: List[float]
+    area: int
+    iscrowd: int = Field(default=0)
 
 
 class Category(BaseModel):
@@ -53,9 +56,11 @@ class COCO:
         self.image_ids_to_names = {elem.id: elem.file_name for elem in self.images}
         return new_id
 
-    def add_ann_to_coco(self, elem: Annotation) -> int:
-        new_id = self.max_ann_id
+    def add_ann_to_coco(self, elem: Annotation, new_image_id: int, new_category_id: int) -> int:
+        new_id = self.max_ann_id + 1
         elem.id = new_id
+        elem.image_id = new_image_id
+        elem.category_id = new_category_id
         self.annotations.append(elem)
         self.max_ann_id = new_id
         return new_id
@@ -66,10 +71,11 @@ class COCO:
         if category_id:
             return category_id
 
-        new_id = self.max_cat_id
+        new_id = self.max_cat_id + 1
         elem.id = new_id
         self.categories.append(elem)
         self.cat_names_to_ids = {elem.name: elem.id for elem in self.categories}
+        self.cat_ids_to_names = {elem.id: elem.name for elem in self.categories}
         self.max_cat_id = new_id
         return new_id
 
@@ -102,6 +108,8 @@ class COCO:
         self.image_ids_to_names = {elem.id: elem.file_name for elem in self.images}
 
         self.cat_names_to_ids = {elem.name: elem.id for elem in self.categories}
+        
+        self.cat_ids_to_names = {elem.id: elem.name for elem in self.categories}
 
     def _check_if_image_exists(self, image_name: str) -> Optional[int]:
         return self.image_names_to_ids.get(image_name)
@@ -112,7 +120,7 @@ class COCO:
     def get_coco_dict(self) -> Dict:
         return {
             "images": [elem.model_dump() for elem in self.images],
-            "annotation": [elem.model_dump() for elem in self.annotations],
+            "annotations": [elem.model_dump() for elem in self.annotations],
             "categories": [elem.model_dump() for elem in self.categories],
         }
 
@@ -125,16 +133,19 @@ class COCO:
         for image in coco.images:
             self.add_image_to_coco(image)
 
-        for ann in coco.annotations:
-            self.add_ann_to_coco(ann)
-
         for cat in coco.categories:
             self.add_cat_to_coco(cat)
+        
+        for ann in coco.annotations:
+            new_image_id = self.image_names_to_ids[coco.image_ids_to_names[ann.image_id]]
+            new_category_id = self.cat_names_to_ids[coco.cat_ids_to_names[ann.category_id]]
+            self.add_ann_to_coco(ann, new_image_id, new_category_id)
+
+
 
     def split(self, ratio: float = 0.2, mode="random") -> Tuple["COCO", "COCO"]:
         if mode == "random":  # split at image level
             images_A, images_B = random_split(self.images, split_ratio=ratio)
-            print(len(images_A), len(images_B))
             images_A_ids = {elem.id for elem in images_A}
             images_B_ids = {elem.id for elem in images_B}
 
@@ -187,6 +198,14 @@ class COCO:
     def from_json_file(cls, json_file: str) -> "COCO":
         with open(json_file, "r") as f:
             coco_data = json.load(f)
+        return cls._from_coco_data(coco_data)
+
+    @classmethod
+    def from_dict(cls, coco_data: Dict) -> "COCO":
+        return cls._from_coco_data(coco_data)
+
+    @classmethod
+    def _from_coco_data(cls, coco_data: Dict) -> "COCO":
         images = [Image(**elem) for elem in coco_data.get("images", [])]
         annotations = [Annotation(**elem) for elem in coco_data.get("annotations", [])]
         categories = [Category(**elem) for elem in coco_data.get("categories", [])]
