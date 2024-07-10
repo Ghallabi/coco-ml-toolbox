@@ -1,14 +1,13 @@
 {
     "info": {
         "description": "Sample COCO dataset 1",
-        "year": 2024,
-        "contributor": "OpenAI"
+        "year": 2024
     },
     "licenses": [
         {
             "id": 1,
-            "name": "Attribution-NonCommercial-ShareAlike License",
-            "url": "http://creativecommons.org/licenses/by-nc-sa/2.0/"
+            "name": "",
+            "url": ""
         }
     ],
     "images": [

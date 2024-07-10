@@ -17,7 +17,7 @@ class Annotation(BaseModel):
     id: int = Field(default=0)
     image_id: int
     category_id: int
-    bbox: List[float]
+    bbox: List[int]
     segmentation: List[float]
     area: int
     iscrowd: int = Field(default=0)
@@ -43,7 +43,7 @@ class COCO:
 
     def add_image_to_coco(self, elem: Image) -> int:
 
-        image_id = self._check_if_categ_exists(elem.file_name)
+        image_id = self._check_if_image_exists(elem.file_name)
 
         if image_id:
             return image_id

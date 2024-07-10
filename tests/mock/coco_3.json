@@ -1,11 +1,11 @@
 {
     "info": {
-        "description": "Sample COCO dataset 2",
+        "description": "Sample COCO file 3",
         "year": 2024
     },
     "licenses": [
         {
-            "id": 2,
+            "id": 1,
             "name": "",
             "url": ""
         }
@@ -13,51 +13,51 @@
     "images": [
         {
             "id": 1,
-            "file_name": "image3.jpg",
+            "file_name": "image5.jpg",
             "height": 1024,
             "width": 768,
-            "license": 2,
-            "flickr_url": "http://example.com/image3.jpg",
-            "coco_url": "http://example.com/image3.jpg",
-            "date_captured": "2024-07-01 12:00:00"
+            "license": 1,
+            "flickr_url": "http://example.com/image5.jpg",
+            "coco_url": "http://example.com/image5.jpg",
+            "date_captured": "2024-07-02 12:00:00"
         },
         {
             "id": 2,
-            "file_name": "image4.jpg",
+            "file_name": "image3.jpg",
             "height": 1024,
             "width": 768,
-            "license": 2,
-            "flickr_url": "http://example.com/image4.jpg",
-            "coco_url": "http://example.com/image4.jpg",
-            "date_captured": "2024-07-01 12:00:00"
+            "license": 1,
+            "flickr_url": "http://example.com/image3.jpg",
+            "coco_url": "http://example.com/image3.jpg",
+            "date_captured": "2024-07-02 12:00:00"
         }
     ],
     "annotations": [
         {
             "id": 1,
-            "image_id": 1,
+            "image_id": 2,
             "category_id": 1,
             "bbox": [
-                120,
-                220,
-                70,
-                100
+                100,
+                200,
+                60,
+                90
             ],
-            "area": 7000,
+            "area": 5400,
             "segmentation": [],
             "iscrowd": 0
         },
         {
             "id": 2,
-            "image_id": 2,
-            "category_id": 3,
+            "image_id": 1,
+            "category_id": 2,
             "bbox": [
-                180,
-                280,
-                80,
-                120
+                150,
+                250,
+                75,
+                110
             ],
-            "area": 9600,
+            "area": 8250,
             "segmentation": [],
             "iscrowd": 0
         }
@@ -70,22 +70,17 @@
         },
         {
             "id": 2,
-            "name": "truck",
+            "name": "bus",
             "supercategory": "vehicle"
         },
         {
             "id": 3,
-            "name": "car",
-            "supercategory": "vehicle"
-        },
-        {
-            "id": 4,
             "name": "boat",
             "supercategory": "vehicle"
         },
         {
-            "id": 5,
-            "name": "traffic light",
+            "id": 4,
+            "name": "stop sign",
             "supercategory": "outdoor"
         }
     ]
