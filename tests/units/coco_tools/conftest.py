@@ -3,16 +3,16 @@ import json
 
 
 @pytest.fixture
-def coco_1_input():
-    coco_1_file = "tests/mock/coco_1.json"
+def coco_merge_input_1():
+    coco_1_file = "tests/mock/coco_merge_input_1.json"
     coco_json = {}
     with open(coco_1_file, "r") as f:
         coco_json = json.load(f)
     return coco_json
 
 @pytest.fixture
-def coco_2_input():
-    coco_2_file =  "tests/mock/coco_2.json"
+def coco_merge_input_2():
+    coco_2_file =  "tests/mock/coco_merge_input_2.json"
     coco_json = {}
     with open(coco_2_file, "r") as f:
         coco_json = json.load(f)
@@ -21,8 +21,8 @@ def coco_2_input():
 
 
 @pytest.fixture
-def coco_3_input():
-    coco_3_file =  "tests/mock/coco_3.json"
+def coco_merge_input_3():
+    coco_3_file =  "tests/mock/coco_merge_input_3.json"
     coco_json = {}
     with open(coco_3_file, "r") as f:
         coco_json = json.load(f)
@@ -30,8 +30,8 @@ def coco_3_input():
 
 
 @pytest.fixture
-def coco_4_input():
-    coco_4_file =  "tests/mock/coco_4.json"
+def coco_split_random_input():
+    coco_4_file =  "tests/mock/coco_split_random.json"
     coco_json = {}
     with open(coco_4_file, "r") as f:
         coco_json = json.load(f)
