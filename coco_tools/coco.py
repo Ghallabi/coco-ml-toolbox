@@ -19,7 +19,7 @@ class Annotation(BaseModel):
     image_id: int
     category_id: int
     bbox: List[float]
-    segmentation: List[float]
+    segmentation: List[float] = Field(default=[])
     area: int
     iscrowd: int = Field(default=0)
 
