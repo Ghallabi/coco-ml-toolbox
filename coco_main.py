@@ -43,8 +43,13 @@ def merge_cmd(args):
     
 
 def crop_cmd(args):
-    pass
-
+    
+    coco_file = args.coco_path
+    coco = COCO.from_json_file(coco_file)
+    images_dir = Path(args.images_dir)
+    output_dir = Path(args.output_dir) if args.output_dir else images_dir.parent / "cropped"
+    output_dir.mkdir(exist_ok=True, parents=True)
+    coco.crop(images_dir, output_dir)
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -66,6 +71,7 @@ def parse_args():
     )
     parser_crop.add_argument("--coco-path", required=True, help="Path to coco file")
     parser_crop.add_argument("--images-dir", required=True, help="Path to coco image files")
+    parser_crop.add_argument("--output-dir", required=False, help="Path to output dir")
     args = parser.parse_args()
     return args
 

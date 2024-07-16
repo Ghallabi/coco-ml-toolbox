@@ -4,7 +4,8 @@ import logging
 from typing import List, Dict, Optional, Tuple
 from pydantic import BaseModel, Field
 from coco_tools.utils import random_split, stratified_split
-
+from pathlib import Path
+from PIL import Image as PImage
 
 class Image(BaseModel):
     id: int = Field(default=0)
@@ -17,7 +18,7 @@ class Annotation(BaseModel):
     id: int = Field(default=0)
     image_id: int
     category_id: int
-    bbox: List[int]
+    bbox: List[float]
     segmentation: List[float]
     area: int
     iscrowd: int = Field(default=0)
@@ -194,6 +195,28 @@ class COCO:
         elif mode == "strat_multi_obj":  # multiple objects per image
             return COCO(), COCO()
 
+    
+    
+    
+    def crop(self, images_dir: str, output_dir: str, categories: List[str]=None):
+        category_names_set = set(categories) if categories else None
+        for elem in self.images:
+            file_image = Path(images_dir)  / elem.file_name
+            image = PImage.open(file_image).convert("RGB")
+            annotations = self.get_annotation_by_image_id(elem.id)
+            for ann in annotations:
+                category_name = self.cat_ids_to_names[ann.category_id]
+                if category_names_set and category_name not in categories:
+                    continue
+                x1, y1, w, h = ann.bbox
+                x2, y2 = x1 + w, y1+h
+                category_dir = Path(output_dir) / category_name
+                category_dir.mkdir(exist_ok=True, parents=True)
+                crop_out_file = category_dir / f"{ann.id}.jpg"
+                crop = image.crop((x1, y1, x2, y2))
+                crop.save(crop_out_file)
+    
+    
     @classmethod
     def from_json_file(cls, json_file: str) -> "COCO":
         with open(json_file, "r") as f:
