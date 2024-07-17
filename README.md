@@ -13,7 +13,7 @@ COCO ML Toolbox is a command-line interface (CLI) tool for managing COCO (Common
 To use the COCO ML Toolbox, clone the repository and install the required dependencies.
 
 ```bash
-git clone https://github.com/your-username/coco-ml-toolbox.git
+git clone https://github.com/Ghallabi/coco-ml-toolbox.git
 cd coco-ml-toolbox
 pip install -r requirements.txt
 ```
