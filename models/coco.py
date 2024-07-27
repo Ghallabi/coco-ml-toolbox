@@ -1,11 +1,12 @@
 import json
-from coco_tools.utils import get_max_id_from_seq
+from models.utils import get_max_id_from_seq
 import logging
 from typing import List, Dict, Optional, Tuple
 from pydantic import BaseModel, Field
-from coco_tools.utils import random_split, stratified_split
+from models.utils import random_split, stratified_split
 from pathlib import Path
 from PIL import Image as PImage
+
 
 class Image(BaseModel):
     id: int = Field(default=0)
@@ -19,7 +20,7 @@ class Annotation(BaseModel):
     image_id: int
     category_id: int
     bbox: List[float]
-    segmentation: List[float] = Field(default=[])
+    segmentation: List[float] | List[List[float]] = Field(default=[])
     area: int
     iscrowd: int = Field(default=0)
 
@@ -57,7 +58,9 @@ class COCO:
         self.image_ids_to_names = {elem.id: elem.file_name for elem in self.images}
         return new_id
 
-    def add_ann_to_coco(self, elem: Annotation, new_image_id: int, new_category_id: int) -> int:
+    def add_ann_to_coco(
+        self, elem: Annotation, new_image_id: int, new_category_id: int
+    ) -> int:
         new_id = self.max_ann_id + 1
         elem.id = new_id
         elem.image_id = new_image_id
@@ -109,7 +112,7 @@ class COCO:
         self.image_ids_to_names = {elem.id: elem.file_name for elem in self.images}
 
         self.cat_names_to_ids = {elem.name: elem.id for elem in self.categories}
-        
+
         self.cat_ids_to_names = {elem.id: elem.name for elem in self.categories}
 
     def _check_if_image_exists(self, image_name: str) -> Optional[int]:
@@ -136,13 +139,15 @@ class COCO:
 
         for cat in coco.categories:
             self.add_cat_to_coco(cat)
-        
+
         for ann in coco.annotations:
-            new_image_id = self.image_names_to_ids[coco.image_ids_to_names[ann.image_id]]
-            new_category_id = self.cat_names_to_ids[coco.cat_ids_to_names[ann.category_id]]
+            new_image_id = self.image_names_to_ids[
+                coco.image_ids_to_names[ann.image_id]
+            ]
+            new_category_id = self.cat_names_to_ids[
+                coco.cat_ids_to_names[ann.category_id]
+            ]
             self.add_ann_to_coco(ann, new_image_id, new_category_id)
-
-
 
     def split(self, ratio: float = 0.2, mode="random") -> Tuple["COCO", "COCO"]:
         if mode == "random":  # split at image level
@@ -195,13 +200,10 @@ class COCO:
         elif mode == "strat_multi_obj":  # multiple objects per image
             return COCO(), COCO()
 
-    
-    
-    
-    def crop(self, images_dir: str, output_dir: str, categories: List[str]=None):
+    def crop(self, images_dir: str, output_dir: str, categories: List[str] = None):
         category_names_set = set(categories) if categories else None
         for elem in self.images:
-            file_image = Path(images_dir)  / elem.file_name
+            file_image = Path(images_dir) / elem.file_name
             image = PImage.open(file_image).convert("RGB")
             annotations = self.get_annotation_by_image_id(elem.id)
             for ann in annotations:
@@ -209,14 +211,13 @@ class COCO:
                 if category_names_set and category_name not in categories:
                     continue
                 x1, y1, w, h = ann.bbox
-                x2, y2 = x1 + w, y1+h
+                x2, y2 = x1 + w, y1 + h
                 category_dir = Path(output_dir) / category_name
                 category_dir.mkdir(exist_ok=True, parents=True)
                 crop_out_file = category_dir / f"{ann.id}.jpg"
                 crop = image.crop((x1, y1, x2, y2))
                 crop.save(crop_out_file)
-    
-    
+
     @classmethod
     def from_json_file(cls, json_file: str) -> "COCO":
         with open(json_file, "r") as f:
