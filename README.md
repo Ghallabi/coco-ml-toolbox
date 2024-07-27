@@ -8,6 +8,10 @@ COCO ML Toolbox is a command-line interface (CLI) tool for managing COCO (Common
 - **Merge** multiple COCO dataset files into a single file.
 - **Crop** images based on annotations in a COCO dataset.
 
+## Streamlit App
+
+For ease of use, you can check the streamlit app [here](https://coco-ml-toolbox.streamlit.app/)
+
 ## Installation
 
 To use the COCO ML Toolbox, clone the repository and install the required dependencies.
