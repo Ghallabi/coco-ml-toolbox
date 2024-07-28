@@ -9,17 +9,7 @@ COCO ML Toolbox is a command-line interface (CLI) tool for managing COCO (Common
 - **Crop** images based on annotations in a COCO dataset.
 
 ## Streamlit App
-
-For ease of use, you can check the streamlit app [here](https://coco-ml-toolbox.streamlit.app/). Only merging and splitting are currently supported in the app. To use it:
-
-* Upload coco file(s) for processing
-* For split: you need to change the split ratios using the sliders (`Train / test` and `Train /val` ratios) then click on split button.
-* For merge: click on merge button.
-* After processing is finished, you will have links to download the results 
-
-![image](https://github.com/user-attachments/assets/3a57be37-c2d4-443d-8637-b3254f5c895c)
-
-
+You can use our streamlit app [here](https://coco-ml-toolbox.streamlit.app/). 
 ## Installation
 
 To use the COCO ML Toolbox, clone the repository and install the required dependencies.
