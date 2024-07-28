@@ -3,18 +3,7 @@ from models.coco import COCO
 import json
 import pandas as pd
 from typing import List
-
-
-def check_valid_cocos(json_data_list: List[dict]):
-    valid_keys = {"images", "annotations", "categories"}
-
-    if not isinstance(json_data_list, list):
-        json_data_list = [json_data_list]
-
-    for json_data in json_data_list:
-        if not all(key in json_data for key in valid_keys):
-            return False
-    return True
+from models.utils import check_valid_cocos_st
 
 
 class StApp:
@@ -89,7 +78,7 @@ class StApp:
             accept_multiple_files=True,
         )
         if len(self.uploaded_files) > 0:
-            if check_valid_cocos(self.uploaded_files):
+            if check_valid_cocos_st(self.uploaded_files):
                 st.session_state.files_ready = True
             else:
                 st.text(

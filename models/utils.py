@@ -4,8 +4,18 @@ from sklearn.model_selection import train_test_split
 from typing import List
 import random
 
-def check_is_json(file_path:str)-> bool:
-    file_path =  Path(file_path)
+
+def check_valid_cocos_st(json_data_list: List[dict]):
+    valid_keys = {"images", "annotations", "categories"}
+    for json_data_path in json_data_list:
+        json_data = json_data_path.getvalue().decode("utf-8")
+        if not all(key in json_data for key in valid_keys):
+            return False
+    return True
+
+
+def check_is_json(file_path: str) -> bool:
+    file_path = Path(file_path)
     return file_path.is_file() and file_path.suffix == ".json"
 
 
