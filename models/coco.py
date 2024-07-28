@@ -97,6 +97,7 @@ class COCO:
         return annotations
 
     def _update_attributes(self) -> None:
+
         self.max_image_id = get_max_id_from_seq(
             [elem.model_dump() for elem in self.images]
         )
