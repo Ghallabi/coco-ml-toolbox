@@ -19,6 +19,7 @@ class Annotation(BaseModel):
     id: int = Field(default=0)
     image_id: int
     category_id: int
+    score: float = Field(default=1.0)
     bbox: List[float]
     segmentation: List[float] | List[List[float]] = Field(default=[])
     area: int

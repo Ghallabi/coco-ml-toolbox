@@ -3,7 +3,7 @@ from models.coco import COCO
 import json
 import pandas as pd
 from typing import List
-from models.utils import check_valid_cocos_st
+from pages.utils import coco_file_uploader
 
 
 class StApp:
@@ -34,7 +34,6 @@ class StApp:
             st.session_state.merge_button_clicked = False
 
         self.split_ratios = []
-        # col1, col2 = st.sidebar.columns(2)
 
         self.split_ratios.append(
             st.sidebar.slider("Split Train / test", min_value=0.0, max_value=1.0)
@@ -52,41 +51,10 @@ class StApp:
             st.session_state.merge_button_clicked = False
         col3.markdown("  ")
 
-    def _setup_logo_widget(self):
-        col1, col2, col3 = st.sidebar.columns([0.2, 0.6, 0.2])
-        with col1:
-            st.markdown("")
-
-        with col2:
-            col2.image("./logo/nlb_logo.png", width=150)
-
-        with col3:
-            col3.markdown("")
-
     def _setup_main_ui(self):
 
-        self.coco_file_uploader()
+        st.session_state.files_ready, self.uploaded_files = coco_file_uploader(st)
         self.process_files()
-
-        print(len(self.uploaded_files))
-
-    def coco_file_uploader(self):
-
-        self.uploaded_files = st.file_uploader(
-            "Choose COCO files",
-            type=["json"],
-            accept_multiple_files=True,
-        )
-        if len(self.uploaded_files) > 0:
-            if check_valid_cocos_st(self.uploaded_files):
-                st.session_state.files_ready = True
-            else:
-                st.text(
-                    "The uploaded file(s) do not meet the COCO format requirements."
-                )
-                st.session_state.files_ready = False
-        else:
-            st.session_state.files_ready = False
 
     def process_files(self):
 

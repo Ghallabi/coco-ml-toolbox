@@ -5,7 +5,7 @@ import streamlit as st
 
 home_page = st.Page("pages/home.py", title="Home", icon="🏠")
 tools_page = st.Page("pages/tools.py", title="Tools", icon="🪛")
-analysis_page = st.Page("pages/analysis.py", title="Analysis", icon="🔍")
+analysis_page = st.Page("pages/stats.py", title="Stats", icon="📊")
 
 
 pg = st.navigation([home_page, tools_page, analysis_page])
