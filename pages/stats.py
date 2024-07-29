@@ -3,7 +3,6 @@ from models.coco import COCO
 from pages.utils import coco_file_uploader
 import json
 from collections import defaultdict
-import matplotlib.pyplot as plt
 import pandas as pd
 import altair as alt
 
