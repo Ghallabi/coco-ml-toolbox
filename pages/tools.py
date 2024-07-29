@@ -23,15 +23,29 @@ class StApp:
         if "results_ready" not in st.session_state:
             st.session_state.results_ready = False
 
-        cols = st.sidebar.columns(2)
-
-        if cols[0].button("merge"):
+        st.sidebar.subheader("Merge")
+        cols = st.sidebar.columns([0.3, 0.4, 0.3])
+        if cols[1].button("merge"):
             st.session_state.merge_button_clicked = True
             st.session_state.split_button_clicked = False
 
-        if cols[1].button("split"):
+        st.sidebar.markdown("#")
+        st.sidebar.subheader("Split")
+
+        cols = st.sidebar.columns(2)
+
+        if cols[0].button("stratified split"):
             st.session_state.split_button_clicked = True
             st.session_state.merge_button_clicked = False
+            st.session_state.split_mode = "strat"
+
+        if cols[1].button("random split"):
+            st.session_state.split_button_clicked = True
+            st.session_state.merge_button_clicked = False
+            st.session_state.split_mode = "random"
+
+        st.sidebar.markdown("#")
+        st.sidebar.subheader("split params")
 
         self.split_ratios = []
 
@@ -41,7 +55,7 @@ class StApp:
         self.split_ratios.append(
             st.sidebar.slider("Split Train / Val", min_value=0.0, max_value=1.0)
         )
-        print(self.split_ratios)
+
         st.sidebar.markdown("#")
         col1, col2, col3 = st.sidebar.columns([0.3, 0.4, 0.3])
         col1.markdown("  ")
@@ -125,12 +139,16 @@ class StApp:
         )
 
         if self.split_ratios[0] > 0:
-            train_tmp, test_coco = coco_base.split(ratio=self.split_ratios[0])
+            train_tmp, test_coco = coco_base.split(
+                ratio=self.split_ratios[0], mode=st.session_state.split_mode
+            )
         else:
             train_tmp, test_coco = coco_base, COCO()
 
         if self.split_ratios[1] > 0:
-            train_coco, val_coco = train_tmp.split(ratio=self.split_ratios[1])
+            train_coco, val_coco = train_tmp.split(
+                ratio=self.split_ratios[1], mode=st.session_state.split_mode
+            )
         else:
             train_coco, val_coco = train_tmp, COCO()
 
