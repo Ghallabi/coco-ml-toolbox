@@ -7,6 +7,7 @@ from models.utils import random_split, stratified_split
 from pathlib import Path
 from PIL import Image as PImage
 from collections import defaultdict
+import concurrent.futures
 
 
 class Image(BaseModel):
@@ -250,23 +251,43 @@ class COCO:
         elif mode == "strat_multi_obj":  # multiple objects per image
             return COCO(), COCO()
 
-    def crop(self, images_dir: str, output_dir: str, categories: List[str] = None):
-        category_names_set = set(categories) if categories else None
+    def _crop_and_save_one_ann(
+        self, image: PImage.Image, ann: Annotation, output_dir: Path
+    ):
+
+        x1, y1, w, h = ann.bbox
+        x2, y2 = x1 + w, y1 + h
+        category_name = self.cat_ids_to_names[ann.category_id]
+        category_dir = Path(output_dir) / category_name
+        category_dir.mkdir(exist_ok=True, parents=True)
+        crop_out_file = category_dir / f"{ann.id}.jpg"
+        crop = image.crop((x1, y1, x2, y2))
+        crop.save(crop_out_file)
+
+    def crop(
+        self,
+        images_dir: str,
+        output_dir: str,
+        max_workers: int = 1,
+    ):
+
         for elem in self.images:
             file_image = Path(images_dir) / elem.file_name
             image = PImage.open(file_image).convert("RGB")
             annotations = self.get_annotation_by_image_id(elem.id)
-            for ann in annotations:
-                category_name = self.cat_ids_to_names[ann.category_id]
-                if category_names_set and category_name not in categories:
-                    continue
-                x1, y1, w, h = ann.bbox
-                x2, y2 = x1 + w, y1 + h
-                category_dir = Path(output_dir) / category_name
-                category_dir.mkdir(exist_ok=True, parents=True)
-                crop_out_file = category_dir / f"{ann.id}.jpg"
-                crop = image.crop((x1, y1, x2, y2))
-                crop.save(crop_out_file)
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=max_workers
+            ) as executor:
+                tasks = [
+                    executor.submit(
+                        self._crop_and_save_one_ann,
+                        image,
+                        ann,
+                        output_dir,
+                    )
+                    for ann in annotations
+                ]
+                concurrent.futures.wait(tasks)
 
     @classmethod
     def from_json_file(cls, json_file: str) -> "COCO":
