@@ -29,7 +29,11 @@ st.markdown(
     2. **Merge Files**: The tool combines all uploaded coco files into a single COCO file.
 
 
-    ## :mag: Analysis
-    WIP
+    ## :bar_chart: Statistics
+    Upload a coco file to get insights about the following statistics:
+    * Overal statistics such as number of images, number of annotations, number of categories. etc.
+    * Per class statistics:
+        * X Top / Bottom classes in terms of frequency
+        * X Top / Bottom classes in term of class score (if you have coco output from inference job)
 """
 )

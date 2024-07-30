@@ -11,15 +11,20 @@ def check_valid_cocos_st(json_data_list: List[dict]):
     return True
 
 
-def coco_file_uploader(container):
+def coco_file_uploader(container, accept_multiple_files: bool = False):
 
     uploaded_files = container.file_uploader(
         "Choose COCO files",
         type=["json"],
-        accept_multiple_files=True,
+        accept_multiple_files=accept_multiple_files,
     )
     files_ready = False
-    if len(uploaded_files) > 0:
+    uploaded_files = (
+        [uploaded_files]
+        if uploaded_files is not None and not isinstance(uploaded_files, list)
+        else uploaded_files or []
+    )
+    if uploaded_files:
         if check_valid_cocos_st(uploaded_files):
             files_ready = True
         else:

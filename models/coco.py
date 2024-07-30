@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from models.utils import random_split, stratified_split
 from pathlib import Path
 from PIL import Image as PImage
+from collections import defaultdict
 
 
 class Image(BaseModel):
@@ -97,6 +98,41 @@ class COCO:
 
         return annotations
 
+    def calculate_coco_stats(self):
+
+        self.count_objs_per_image = defaultdict(int)
+        self.count_objs_per_categ = defaultdict(int)
+        self.scores_per_categ = defaultdict(float)
+
+        for elem in self.annotations:
+            self.count_objs_per_image[elem.image_id] += 1
+            self.count_objs_per_categ[elem.category_id] += 1
+            self.scores_per_categ[elem.category_id] += 1
+
+        self.avg_obj_per_image = (
+            int(
+                sum(self.count_objs_per_image.values())
+                / len(self.count_objs_per_image.values())
+            )
+            if len(self.count_objs_per_image.values()) > 0
+            else 0
+        )
+        self.min_obj_per_image = (
+            min(self.count_objs_per_image.values()) if self.count_objs_per_image else 0
+        )
+        self.max_obj_per_image = (
+            max(self.count_objs_per_image.values()) if self.count_objs_per_image else 0
+        )
+
+        self.class_scores = {
+            cat_id: (
+                self.scores_per_categ[cat_id] / self.count_objs_per_categ[cat_id]
+                if self.count_objs_per_categ[cat_id] > 0
+                else 0
+            )
+            for cat_id in self.scores_per_categ
+        }
+
     def _update_attributes(self) -> None:
 
         self.max_image_id = get_max_id_from_seq(
@@ -152,6 +188,18 @@ class COCO:
             self.add_ann_to_coco(ann, new_image_id, new_category_id)
 
     def split(self, ratio: float = 0.2, mode="random") -> Tuple["COCO", "COCO"]:
+        if ratio > 0:
+            return self._split(ratio=ratio, mode=mode)
+        return (
+            COCO(
+                images=self.images,
+                annotations=self.annotations,
+                categories=self.categories,
+            ),
+            COCO(),
+        )
+
+    def _split(self, ratio: float = 0.2, mode="random") -> Tuple["COCO", "COCO"]:
         if mode == "random":  # split at image level
             images_A, images_B = random_split(self.images, split_ratio=ratio)
             images_A_ids = {elem.id for elem in images_A}
@@ -182,7 +230,7 @@ class COCO:
             for ann in self.annotations:
                 categ_to_ann_dict[ann.category_id].append(ann)
 
-            ann_A_dict, ann_B_dict = stratified_split(categ_to_ann_dict)
+            ann_A_dict, ann_B_dict = stratified_split(categ_to_ann_dict, ratio=ratio)
             annotations_A, annotations_B = [], []
             image_ids_A, image_ids_B = set(), set()
             for ann_list in ann_A_dict.values():

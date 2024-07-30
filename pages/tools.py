@@ -67,7 +67,9 @@ class StApp:
 
     def _setup_main_ui(self):
 
-        st.session_state.files_ready, self.uploaded_files = coco_file_uploader(st)
+        st.session_state.files_ready, self.uploaded_files = coco_file_uploader(
+            st, accept_multiple_files=True
+        )
         self.process_files()
 
     def process_files(self):
@@ -134,23 +136,23 @@ class StApp:
         if self.split_ratios == [0.0, 0.0]:
             st.text("Both split ratios are zero! cannot split")
             return COCO(), COCO(), COCO()
+
         coco_base = COCO.from_dict(
             json.loads(self.uploaded_files[0].getvalue().decode("utf-8"))
         )
+        coco_base.calculate_coco_stats()
+        if st.session_state.split_mode == "strat":
+            if coco_base.max_obj_per_image == coco_base.min_obj_per_image == 1:
+                st.session_state.split_mode = "strat_single_obj"
+            else:
+                st.session_state.split_mode = "strat_multi_obj"
 
-        if self.split_ratios[0] > 0:
-            train_tmp, test_coco = coco_base.split(
-                ratio=self.split_ratios[0], mode=st.session_state.split_mode
-            )
-        else:
-            train_tmp, test_coco = coco_base, COCO()
-
-        if self.split_ratios[1] > 0:
-            train_coco, val_coco = train_tmp.split(
-                ratio=self.split_ratios[1], mode=st.session_state.split_mode
-            )
-        else:
-            train_coco, val_coco = train_tmp, COCO()
+        train_coco, test_coco = coco_base.split(
+            ratio=self.split_ratios[0], mode=st.session_state.split_mode
+        )
+        train_coco, val_coco = train_coco.split(
+            ratio=self.split_ratios[1], mode=st.session_state.split_mode
+        )
 
         return train_coco, val_coco, test_coco
 

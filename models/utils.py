@@ -5,15 +5,6 @@ from typing import List
 import random
 
 
-def check_valid_cocos_st(json_data_list: List[dict]):
-    valid_keys = {"images", "annotations", "categories"}
-    for json_data_path in json_data_list:
-        json_data = json_data_path.getvalue().decode("utf-8")
-        if not all(key in json_data for key in valid_keys):
-            return False
-    return True
-
-
 def check_is_json(file_path: str) -> bool:
     file_path = Path(file_path)
     return file_path.is_file() and file_path.suffix == ".json"
@@ -38,7 +29,7 @@ def random_split(data: List, split_ratio: float = 0.2):
     return set_A, set_B
 
 
-def stratified_split(data_dict, test_size=0.2):
+def stratified_split(data_dict, ratio=0.2):
     train_split = {}
     test_split = {}
 
@@ -47,7 +38,7 @@ def stratified_split(data_dict, test_size=0.2):
             # Splitting annotations with stratification
             annotations_train, annotations_test = train_test_split(
                 annotations,
-                test_size=test_size,
+                test_size=ratio,
                 stratify=[key] * len(annotations),
                 random_state=42,
             )

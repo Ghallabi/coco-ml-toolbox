@@ -13,12 +13,15 @@ class CocoAnalysis:
             st.sidebar
         )
         self._setup_tabs()
+        self.top_k = st.sidebar.slider("Top k", min_value=1, max_value=100)
+
         if st.session_state.files_ready:
 
             self.coco = COCO.from_dict(
                 json.loads(self.uploaded_files[0].getvalue().decode("utf-8"))
             )
-            self._compute_coco_stats()
+            self.coco.calculate_coco_stats()
+            self._aggregate_coco_stats()
             self.display_stats_grid()
 
     def _setup_tabs(self):
@@ -26,34 +29,14 @@ class CocoAnalysis:
             ["Overview", "Categories", "Performance"]
         )
 
-    def _compute_coco_stats(self):
-        self.num_images = len(self.coco.images)
-        self.num_anns = len(self.coco.annotations)
-        self.num_categs = len(self.coco.categories)
-        self.class_count = defaultdict(int)
-        class_scores = defaultdict(float)
-        obj_per_image = defaultdict(int)
-        for ann in self.coco.annotations:
-            self.class_count[ann.category_id] += 1
-            obj_per_image[ann.image_id] += 1
-            class_scores[ann.category_id] += ann.score
-
-        self.avg_obj_per_image = int(
-            sum(obj_per_image.values()) / len(obj_per_image.values())
-        )
-        self.min_obj_per_image = min(obj_per_image.values())
-        self.max_obj_per_image = max(obj_per_image.values())
-
-        self.class_scores = {
-            cat_id: class_scores[cat_id] / self.class_count[cat_id]
-            for cat_id in class_scores
-        }
+    def _aggregate_coco_stats(self):
 
         category_names = [
-            self.coco.cat_ids_to_names[cat_id] for cat_id in self.class_count.keys()
+            self.coco.cat_ids_to_names[cat_id]
+            for cat_id in self.coco.count_objs_per_categ.keys()
         ]
-        counts = list(self.class_count.values())
-        scores = list(self.class_scores.values())
+        counts = list(self.coco.count_objs_per_categ.values())
+        scores = list(self.coco.class_scores.values())
         # Create a DataFrame for sorting
         self.df = pd.DataFrame(
             {"Category": category_names, "Count": counts, "Scores": scores}
@@ -67,22 +50,30 @@ class CocoAnalysis:
             col1, col2 = st.columns(2)
             with col1:
                 self.plot_per_class_count(
-                    top_n=20, title="Top 20 Classes (frequency)", sort_key="Count"
+                    top_n=self.top_k,
+                    title=f"Top {self.top_k} Classes (frequency)",
+                    sort_key="Count",
                 )
             with col2:
                 self.plot_per_class_count(
-                    bottom_n=20, title="Bottom 20 Classes by Count", sort_key="Count"
+                    bottom_n=self.top_k,
+                    title=f"Bottom {self.top_k} Classes by Count",
+                    sort_key="Count",
                 )
 
         with self.tab3:
             col1, col2 = st.columns(2)
             with col1:
                 self.plot_per_class_count(
-                    top_n=20, title="Top 20 Classes (scores)", sort_key="Scores"
+                    top_n=20,
+                    title=f"Top {self.top_k} Classes (scores)",
+                    sort_key="Scores",
                 )
             with col2:
                 self.plot_per_class_count(
-                    bottom_n=20, title="Bottom 20 Classes (scores)", sort_key="Scores"
+                    bottom_n=20,
+                    title=f"Bottom {self.top_k} Classes (scores)",
+                    sort_key="Scores",
                 )
 
     def display_general_stats(self):
@@ -97,12 +88,12 @@ class CocoAnalysis:
                 "Max objects per image",
             ],
             "Value": [
-                self.num_images,
-                self.num_anns,
-                self.num_categs,
-                self.avg_obj_per_image,
-                self.min_obj_per_image,
-                self.max_obj_per_image,
+                len(self.coco.images),
+                len(self.coco.annotations),
+                len(self.coco.categories),
+                self.coco.avg_obj_per_image,
+                self.coco.min_obj_per_image,
+                self.coco.max_obj_per_image,
             ],
         }
 
