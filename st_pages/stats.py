@@ -51,13 +51,13 @@ class CocoAnalysis:
             with col1:
                 self.plot_per_class_count(
                     top_n=self.top_k,
-                    title=f"Top {self.top_k} Classes (frequency)",
+                    title=f"Top {self.top_k} Classes (Frequency)",
                     sort_key="Count",
                 )
             with col2:
                 self.plot_per_class_count(
                     bottom_n=self.top_k,
-                    title=f"Bottom {self.top_k} Classes by Count",
+                    title=f"Bottom {self.top_k} Classes (Frequency)",
                     sort_key="Count",
                 )
 
