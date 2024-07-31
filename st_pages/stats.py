@@ -1,6 +1,6 @@
 import streamlit as st
-from models.coco import COCO
-from pages.utils import coco_file_uploader
+from cocomltools.models.coco import COCO
+from st_pages.utils import coco_file_uploader
 import json
 from collections import defaultdict
 import pandas as pd

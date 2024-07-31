@@ -1,9 +1,8 @@
 import streamlit as st
-from models.coco import COCO
+from cocomltools.models.coco import COCO
 import json
 import pandas as pd
-from typing import List
-from pages.utils import coco_file_uploader
+from st_pages.utils import coco_file_uploader
 
 
 class StApp:

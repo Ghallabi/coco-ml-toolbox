@@ -1,5 +1,5 @@
-from models.coco import COCO
-from models.utils import check_is_json
+from cocomltools.models.coco import COCO
+from cocomltools.utils import check_is_json
 import argparse
 from pathlib import Path
 

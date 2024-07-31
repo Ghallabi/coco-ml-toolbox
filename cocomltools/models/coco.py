@@ -1,36 +1,12 @@
 import json
-from models.utils import get_max_id_from_seq
 import logging
 from typing import List, Dict, Optional, Tuple
-from pydantic import BaseModel, Field
-from models.utils import random_split, stratified_split
+from cocomltools.utils import random_split, stratified_split, get_max_id_from_seq
 from pathlib import Path
 from PIL import Image as PImage
 from collections import defaultdict
 import concurrent.futures
-
-
-class Image(BaseModel):
-    id: int = Field(default=0)
-    file_name: str
-    width: int
-    height: int
-
-
-class Annotation(BaseModel):
-    id: int = Field(default=0)
-    image_id: int
-    category_id: int
-    score: float = Field(default=1.0)
-    bbox: List[float]
-    segmentation: List[float] | List[List[float]] = Field(default=[])
-    area: int
-    iscrowd: int = Field(default=0)
-
-
-class Category(BaseModel):
-    id: int = Field(default=0)
-    name: str
+from cocomltools.models.base import Image, Annotation, Category
 
 
 class COCO:
