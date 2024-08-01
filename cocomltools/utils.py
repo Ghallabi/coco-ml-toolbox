@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold
 from typing import List
 import random
+from cocomltools.models.base import Annotation
+from collections import defaultdict
 
 
 def check_is_json(file_path: str) -> bool:
@@ -50,3 +52,38 @@ def stratified_split(data_dict, ratio=0.2):
             test_split[key] = []
 
     return train_split, test_split
+
+
+def create_split_priority_queue(
+    annotations: List[Annotation], skip_categories: set[int] = None
+) -> dict:
+    categories_to_images_ids = defaultdict(list)
+    for ann in annotations:
+        categories_to_images_ids[ann.category_id].append(ann.image_id)
+
+    categories_to_image_ids_stats = {}
+    for category_id, image_list in categories_to_images_ids.items():
+        image_counts = defaultdict(int)
+        for image_name in image_list:
+            image_counts[image_name] += 1
+
+        stats_dict = {}
+        stats_dict[category_id] = {}
+        stats_dict[category_id]["images"] = dict(
+            sorted(image_counts.items(), key=lambda x: x[1], reverse=True)
+        )
+        stats_dict[category_id]["total_images"] = len(image_counts)
+        stats_dict[category_id]["total_instances"] = sum(
+            [item for item in image_counts.values()]
+        )
+        categories_to_image_ids_stats[category_id] = stats_dict
+
+    priority_queue = dict(
+        sorted(
+            categories_to_image_ids_stats.items(),
+            key=lambda x: (x[1]["total_images"], x[1]["total_instances"]),
+            reverse=True,
+        )
+    )
+
+    return priority_queue
