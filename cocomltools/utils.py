@@ -64,9 +64,11 @@ def mlt_stratified_split(data_dict, ratio: float = 0.2):
     category_matrix = mlb.fit_transform(list(data_dict.values()))
     image_ids = np.array(list(data_dict.keys())).reshape(-1, 1)
 
-    train_ids, test_ids, _, _ = iterative_train_test_split(
-        image_ids,
-        category_matrix,
-        test_size=ratio,
+    X_train, _, X_test, _ = iterative_train_test_split(
+        image_ids, category_matrix, test_size=ratio
     )
-    return train_ids, test_ids
+
+    # Flatten the arrays
+    train_ids = X_train.ravel()
+    test_ids = X_test.ravel()
+    return set(train_ids), set(test_ids)

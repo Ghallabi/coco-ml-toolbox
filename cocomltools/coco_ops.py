@@ -55,6 +55,7 @@ class CocoOps:
         for ann in self.coco.annotations:
             images_to_categories[ann.image_id].append(ann.category_id)
         train_ids, test_ids = mlt_stratified_split(images_to_categories, ratio=ratio)
+
         annotations_A = []
         annotations_B = []
         for ann in self.coco.annotations:
