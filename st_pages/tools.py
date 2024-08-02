@@ -140,20 +140,10 @@ class StApp:
         coco_base = COCO.from_dict(
             json.loads(self.uploaded_files[0].getvalue().decode("utf-8"))
         )
-        coco_ops = CocoOps(coco_base)
-
-        # coco_base.calculate_coco_stats()
-        # if st.session_state.split_mode == "strat":
-        #     if coco_base.max_obj_per_image == coco_base.min_obj_per_image == 1:
-        #         st.session_state.split_mode = "strat_single_obj"
-        #     else:
-        #         st.session_state.split_mode = "strat_multi_obj"
-
-        train_coco, test_coco = coco_ops.split(
+        train_coco, test_coco = CocoOps(coco_base).split(
             ratio=self.split_ratios[0], mode=st.session_state.split_mode
         )
-        coco_ops = CocoOps(train_coco)
-        train_coco, val_coco = train_coco.split(
+        train_coco, val_coco = CocoOps(train_coco).split(
             ratio=self.split_ratios[1], mode=st.session_state.split_mode
         )
 
