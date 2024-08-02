@@ -1,4 +1,5 @@
 from cocomltools.models.coco import COCO
+from cocomltools.coco_ops import CocoOps
 from cocomltools.utils import check_is_json
 import argparse
 from pathlib import Path
@@ -7,13 +8,15 @@ from pathlib import Path
 def split_cmd(args):
 
     coco_path = Path(args.coco_path)
+
     if not coco_path.is_file():
         raise FileNotFoundError(f"File not found: {args.coco_path}")
     if not args.coco_path.endswith(".json"):
         raise ValueError("Incorrect file format, provide JSON as input")
 
     coco = COCO.from_json_file(args.coco_path)
-    coco_1, coco_2 = coco.split(ratio=args.ratio, mode=args.mode)
+    coco_ops = CocoOps(coco)
+    coco_1, coco_2 = coco_ops.split(ratio=args.ratio, mode=args.mode)
     if args.output_dir and Path(args.output_dir).is_dir():
         output_dir = Path(args.output_dir)
     else:
@@ -45,12 +48,13 @@ def crop_cmd(args):
 
     coco_file = args.coco_path
     coco = COCO.from_json_file(coco_file)
+    coco_ops = CocoOps(coco)
     images_dir = Path(args.images_dir)
     output_dir = (
         Path(args.output_dir) if args.output_dir else images_dir.parent / "cropped"
     )
     output_dir.mkdir(exist_ok=True, parents=True)
-    coco.crop(images_dir, output_dir)
+    coco_ops.crop(images_dir, output_dir)
 
 
 def parse_args():

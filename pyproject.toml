@@ -6,17 +6,19 @@ authors = ["Ghallabi <ghallabi.farouk@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.9.8"
 pydantic="2.8.2"
 pydantic_core="2.20.1"
 scikit-learn = "^1.5.1"
 pillow = "^10.4.0"
+scikit-multilearn = "^0.2.0"
+numpy = "^2.0.1"
 
 
 [tool.poetry.group.app.dependencies]
 altair="5.2.0"
-streamlit = "^1.37.0"
 pandas = "^2.2.2"
+streamlit = "^1.37.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.2"

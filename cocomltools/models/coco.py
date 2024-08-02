@@ -1,11 +1,8 @@
 import json
 import logging
 from typing import List, Dict, Optional, Tuple
-from cocomltools.utils import random_split, stratified_split, get_max_id_from_seq
-from pathlib import Path
-from PIL import Image as PImage
+from cocomltools.utils import get_max_id_from_seq
 from collections import defaultdict
-import concurrent.futures
 from cocomltools.models.base import Image, Annotation, Category
 
 
@@ -63,7 +60,7 @@ class COCO:
         return new_id
 
     def get_annotation_by_image_id(self, image_id: int) -> List[Dict]:
-        return [ann for ann in self.annotations if ann.image_id == image_id]
+        return self.image_ids_to_anns[image_id]
 
     def get_annotations_by_image_name(self, image_name: str) -> List[Dict]:
         annotations = []
@@ -130,6 +127,10 @@ class COCO:
 
         self.cat_ids_to_names = {elem.id: elem.name for elem in self.categories}
 
+        self.image_ids_to_anns = defaultdict(list)
+        for ann in self.annotations:
+            self.image_ids_to_anns[ann.image_id].append(ann)
+
     def _check_if_image_exists(self, image_name: str) -> Optional[int]:
         return self.image_names_to_ids.get(image_name)
 
@@ -163,107 +164,6 @@ class COCO:
                 coco.cat_ids_to_names[ann.category_id]
             ]
             self.add_ann_to_coco(ann, new_image_id, new_category_id)
-
-    def split(self, ratio: float = 0.2, mode="random") -> Tuple["COCO", "COCO"]:
-        if ratio > 0:
-            return self._split(ratio=ratio, mode=mode)
-        return (
-            COCO(
-                images=self.images,
-                annotations=self.annotations,
-                categories=self.categories,
-            ),
-            COCO(),
-        )
-
-    def _split(self, ratio: float = 0.2, mode="random") -> Tuple["COCO", "COCO"]:
-        if mode == "random":  # split at image level
-            images_A, images_B = random_split(self.images, split_ratio=ratio)
-            images_A_ids = {elem.id for elem in images_A}
-            images_B_ids = {elem.id for elem in images_B}
-
-            # Separate annotations based on image ids
-            annotations_A, annotations_B = [], []
-            for elem in self.annotations:
-                if elem.image_id in images_A_ids:
-                    annotations_A.append(elem)
-                elif elem.image_id in images_B_ids:
-                    annotations_B.append(elem)
-            return (
-                COCO(
-                    images=images_A,
-                    annotations=annotations_A,
-                    categories=self.categories,
-                ),
-                COCO(
-                    images=images_B,
-                    annotations=annotations_B,
-                    categories=self.categories,
-                ),
-            )
-
-        elif mode == "strat_single_obj":  # one object per image.
-            categ_to_ann_dict = {elem.id: [] for elem in self.categories}
-            for ann in self.annotations:
-                categ_to_ann_dict[ann.category_id].append(ann)
-
-            ann_A_dict, ann_B_dict = stratified_split(categ_to_ann_dict, ratio=ratio)
-            annotations_A, annotations_B = [], []
-            image_ids_A, image_ids_B = set(), set()
-            for ann_list in ann_A_dict.values():
-                annotations_A.extend(ann_list)
-                image_ids_A.update(ann.image_id for ann in ann_list)
-
-            for ann_list in ann_B_dict.values():
-                annotations_B.extend(ann_list)
-                image_ids_B.update(ann.image_id for ann in ann_list)
-            images_A = [elem for elem in self.images if elem.id in image_ids_A]
-            images_B = [elem for elem in self.images if elem.id in image_ids_B]
-            return COCO(
-                images=images_A, annotations=annotations_A, categories=self.categories
-            ), COCO(
-                images=images_B, annotations=annotations_B, categories=self.categories
-            )
-        elif mode == "strat_multi_obj":  # multiple objects per image
-            return COCO(), COCO()
-
-    def _crop_and_save_one_ann(
-        self, image: PImage.Image, ann: Annotation, output_dir: Path
-    ):
-
-        x1, y1, w, h = ann.bbox
-        x2, y2 = x1 + w, y1 + h
-        category_name = self.cat_ids_to_names[ann.category_id]
-        category_dir = Path(output_dir) / category_name
-        category_dir.mkdir(exist_ok=True, parents=True)
-        crop_out_file = category_dir / f"{ann.id}.jpg"
-        crop = image.crop((x1, y1, x2, y2))
-        crop.save(crop_out_file)
-
-    def crop(
-        self,
-        images_dir: str,
-        output_dir: str,
-        max_workers: int = 1,
-    ):
-
-        for elem in self.images:
-            file_image = Path(images_dir) / elem.file_name
-            image = PImage.open(file_image).convert("RGB")
-            annotations = self.get_annotation_by_image_id(elem.id)
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=max_workers
-            ) as executor:
-                tasks = [
-                    executor.submit(
-                        self._crop_and_save_one_ann,
-                        image,
-                        ann,
-                        output_dir,
-                    )
-                    for ann in annotations
-                ]
-                concurrent.futures.wait(tasks)
 
     @classmethod
     def from_json_file(cls, json_file: str) -> "COCO":

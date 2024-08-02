@@ -1,10 +1,13 @@
 import json
 from pathlib import Path
 from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.preprocessing import MultiLabelBinarizer
 from typing import List
 import random
 from cocomltools.models.base import Annotation
 from collections import defaultdict
+from skmultilearn.model_selection import iterative_train_test_split
+import numpy as np
 
 
 def check_is_json(file_path: str) -> bool:
@@ -31,7 +34,7 @@ def random_split(data: List, split_ratio: float = 0.2):
     return set_A, set_B
 
 
-def stratified_split(data_dict, ratio=0.2):
+def stratified_split(data_dict: dict, ratio: float = 0.2):
     train_split = {}
     test_split = {}
 
@@ -54,36 +57,16 @@ def stratified_split(data_dict, ratio=0.2):
     return train_split, test_split
 
 
-def create_split_priority_queue(
-    annotations: List[Annotation], skip_categories: set[int] = None
-) -> dict:
-    categories_to_images_ids = defaultdict(list)
-    for ann in annotations:
-        categories_to_images_ids[ann.category_id].append(ann.image_id)
+def mlt_stratified_split(data_dict, ratio: float = 0.2):
 
-    categories_to_image_ids_stats = {}
-    for category_id, image_list in categories_to_images_ids.items():
-        image_counts = defaultdict(int)
-        for image_name in image_list:
-            image_counts[image_name] += 1
+    # Convert category lists to a binary format for stratification
+    mlb = MultiLabelBinarizer()
+    category_matrix = mlb.fit_transform(list(data_dict.values()))
+    image_ids = np.array(list(data_dict.keys())).reshape(-1, 1)
 
-        stats_dict = {}
-        stats_dict[category_id] = {}
-        stats_dict[category_id]["images"] = dict(
-            sorted(image_counts.items(), key=lambda x: x[1], reverse=True)
-        )
-        stats_dict[category_id]["total_images"] = len(image_counts)
-        stats_dict[category_id]["total_instances"] = sum(
-            [item for item in image_counts.values()]
-        )
-        categories_to_image_ids_stats[category_id] = stats_dict
-
-    priority_queue = dict(
-        sorted(
-            categories_to_image_ids_stats.items(),
-            key=lambda x: (x[1]["total_images"], x[1]["total_instances"]),
-            reverse=True,
-        )
+    train_ids, test_ids, _, _ = iterative_train_test_split(
+        image_ids,
+        category_matrix,
+        test_size=ratio,
     )
-
-    return priority_queue
+    return train_ids, test_ids
