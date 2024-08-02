@@ -1,11 +1,13 @@
 import pytest
-from models.coco import COCO
+from cocomltools.models.coco import COCO
+from cocomltools.coco_ops import CocoOps
 
 
 def test_split_random(coco_split_random_input):
     # ARRANGE
     coco = COCO.from_dict(coco_split_random_input)
-    coco_1, coco_2 = coco.split(ratio=0.2, mode="random")
+    coco_ops = CocoOps(coco)
+    coco_1, coco_2 = coco_ops.split(ratio=0.2, mode="random")
 
     ann_ids_coco_2 = set([elem.id for elem in coco_2.annotations])
     img_ids_coco_2 = set([elem.id for elem in coco_2.images])

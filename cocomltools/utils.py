@@ -1,8 +1,13 @@
 import json
 from pathlib import Path
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.preprocessing import MultiLabelBinarizer
 from typing import List
 import random
+from cocomltools.models.base import Annotation
+from collections import defaultdict
+from skmultilearn.model_selection import iterative_train_test_split
+import numpy as np
 
 
 def check_is_json(file_path: str) -> bool:
@@ -29,7 +34,7 @@ def random_split(data: List, split_ratio: float = 0.2):
     return set_A, set_B
 
 
-def stratified_split(data_dict, ratio=0.2):
+def stratified_split(data_dict: dict, ratio: float = 0.2):
     train_split = {}
     test_split = {}
 
@@ -50,3 +55,18 @@ def stratified_split(data_dict, ratio=0.2):
             test_split[key] = []
 
     return train_split, test_split
+
+
+def mlt_stratified_split(data_dict, ratio: float = 0.2):
+
+    # Convert category lists to a binary format for stratification
+    mlb = MultiLabelBinarizer()
+    category_matrix = mlb.fit_transform(list(data_dict.values()))
+    image_ids = np.array(list(data_dict.keys())).reshape(-1, 1)
+
+    train_ids, test_ids, _, _ = iterative_train_test_split(
+        image_ids,
+        category_matrix,
+        test_size=ratio,
+    )
+    return train_ids, test_ids
