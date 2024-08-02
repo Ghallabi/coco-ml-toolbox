@@ -55,7 +55,6 @@ class CocoOps:
         for ann in self.coco.annotations:
             images_to_categories[ann.image_id].append(ann.category_id)
         train_ids, test_ids = mlt_stratified_split(images_to_categories, ratio=ratio)
-
         annotations_A = []
         annotations_B = []
         for ann in self.coco.annotations:
@@ -99,7 +98,9 @@ class CocoOps:
 
         for elem in self.images:
             file_image = Path(images_dir) / elem.file_name
-            image = Image.open(file_image).convert("RGB")
             annotations = self.coco.get_annotation_by_image_id(elem.id)
+            if len(annotations) == 0:  # if no annotations, skip
+                continue
+            image = Image.open(file_image).convert("RGB")
             for ann in annotations:
                 self._crop_and_save_one_ann(image, ann, output_dir)
