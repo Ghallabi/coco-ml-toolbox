@@ -17,7 +17,28 @@ class COCO:
         self.images = images or []
         self.annotations = annotations or []
         self.categories = categories or []
-        self._update_attributes()
+
+        self.max_image_id = get_max_id_from_seq(
+            [elem.model_dump() for elem in self.images]
+        )
+        self.max_ann_id = get_max_id_from_seq(
+            [elem.model_dump() for elem in self.annotations]
+        )
+        self.max_cat_id = get_max_id_from_seq(
+            [elem.model_dump() for elem in self.categories]
+        )
+
+        self.image_names_to_ids = {elem.file_name: elem.id for elem in self.images}
+
+        self.image_ids_to_names = {elem.id: elem.file_name for elem in self.images}
+
+        self.cat_names_to_ids = {elem.name: elem.id for elem in self.categories}
+
+        self.cat_ids_to_names = {elem.id: elem.name for elem in self.categories}
+
+        self.image_ids_to_anns = defaultdict(list)
+        for ann in self.annotations:
+            self.image_ids_to_anns[ann.image_id].append(ann)
 
     def add_image_to_coco(self, elem: Image) -> int:
 
@@ -42,6 +63,7 @@ class COCO:
         elem.image_id = new_image_id
         elem.category_id = new_category_id
         self.annotations.append(elem)
+        self.image_ids_to_anns[elem.image_id].append(elem)
         self.max_ann_id = new_id
         return new_id
 
@@ -106,30 +128,6 @@ class COCO:
             )
             for cat_id in self.scores_per_categ
         }
-
-    def _update_attributes(self) -> None:
-
-        self.max_image_id = get_max_id_from_seq(
-            [elem.model_dump() for elem in self.images]
-        )
-        self.max_ann_id = get_max_id_from_seq(
-            [elem.model_dump() for elem in self.annotations]
-        )
-        self.max_cat_id = get_max_id_from_seq(
-            [elem.model_dump() for elem in self.categories]
-        )
-
-        self.image_names_to_ids = {elem.file_name: elem.id for elem in self.images}
-
-        self.image_ids_to_names = {elem.id: elem.file_name for elem in self.images}
-
-        self.cat_names_to_ids = {elem.name: elem.id for elem in self.categories}
-
-        self.cat_ids_to_names = {elem.id: elem.name for elem in self.categories}
-
-        self.image_ids_to_anns = defaultdict(list)
-        for ann in self.annotations:
-            self.image_ids_to_anns[ann.image_id].append(ann)
 
     def _check_if_image_exists(self, image_name: str) -> Optional[int]:
         return self.image_names_to_ids.get(image_name)

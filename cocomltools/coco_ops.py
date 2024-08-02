@@ -94,7 +94,6 @@ class CocoOps:
         self,
         images_dir: str,
         output_dir: str,
-        max_workers: int = 1,
     ):
 
         for elem in self.images:
