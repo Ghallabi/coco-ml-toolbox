@@ -11,13 +11,22 @@ COCO ML Toolbox is a command-line interface (CLI) tool for managing COCO (Common
 ## Streamlit App
 You can use our streamlit app [here](https://coco-ml-toolbox.streamlit.app/). 
 ## Installation
+cocomltools requires python >= 3.9.8
+### Install python package
+The easiest way to install the package is using pip
 
-To use the COCO ML Toolbox, clone the repository and install the required dependencies.
+```
+pip install cocomltools
+```
+
+
+You can also clone the source code and install dependencies using poetry:
 
 ```bash
 git clone https://github.com/Ghallabi/coco-ml-toolbox.git
 cd coco-ml-toolbox
-pip install -r requirements.txt
+pip install poetry
+poetry install
 ```
 
 ## Usage
@@ -35,7 +44,7 @@ python main_cli.py split --coco-path /path/to/coco.json --output-dir /path/to/ou
 * --coco-path: Path to the COCO file (JSON).
 * --output-dir: (Optional) Path to save the split COCO files. Defaults to the directory of the input COCO file.
 * --ratio: (Optional) Split ratio. Defaults to 0.2.
-* --mode: (Optional) Split mode. Options are random, strat_single_obj, or strat_multi_obj. Defaults to random.
+* --mode: (Optional) Split mode. Options are `random` and `strat`. Defaults to random.
 
 
 ### Merge
@@ -53,9 +62,10 @@ python main_cli.py merge --coco-paths /path/to/coco1.json,/path/to/coco2.json --
 Crops images based on annotations in a COCO dataset.
 
 ```bash
-python main_cli.py crop --coco-path /path/to/coco.json --images-dir /path/to/images --output-dir /path/to/cropped_images
+python main_cli.py crop --coco-path /path/to/coco.json --images-dir /path/to/images --output-dir /path/to/cropped_images --num-workers MAX_WORKERS
 ```
 
 * --coco-path: Path to the COCO file (JSON).
 * --images-dir: Path to the directory containing the COCO image files.
 * --output-dir: (Optional) Path to save the cropped images. Defaults to a "cropped" directory within the parent directory of the images.
+* --num-workers: to speed up the cropping process.
