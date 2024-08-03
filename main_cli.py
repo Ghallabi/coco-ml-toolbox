@@ -54,7 +54,7 @@ def crop_cmd(args):
         Path(args.output_dir) if args.output_dir else images_dir.parent / "cropped"
     )
     output_dir.mkdir(exist_ok=True, parents=True)
-    coco_ops.crop(images_dir, output_dir)
+    coco_ops.crop(images_dir, output_dir, max_workers=args.num_workers)
 
 
 def parse_args():
@@ -96,6 +96,13 @@ def parse_args():
         "--images-dir", required=True, help="Path to coco image files"
     )
     parser_crop.add_argument("--output-dir", required=False, help="Path to output dir")
+    parser_crop.add_argument(
+        "--num-workers",
+        required=False,
+        default=1,
+        type=int,
+        help="number of workers to crop the dataset",
+    )
     args = parser.parse_args()
     return args
 
