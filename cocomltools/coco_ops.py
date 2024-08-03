@@ -1,14 +1,10 @@
 from cocomltools.models.coco import COCO
 from cocomltools.models.base import Annotation
 from cocomltools.utils import random_split, mlt_stratified_split
-from typing import List
 from collections import defaultdict
 from PIL import Image
 from pathlib import Path
-import numpy as np
-from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import asyncio
 import time
 
 

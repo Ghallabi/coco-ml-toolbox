@@ -1,11 +1,9 @@
 import json
 from pathlib import Path
-from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MultiLabelBinarizer
 from typing import List
 import random
-from cocomltools.models.base import Annotation
-from collections import defaultdict
 from skmultilearn.model_selection import iterative_train_test_split
 import numpy as np
 
