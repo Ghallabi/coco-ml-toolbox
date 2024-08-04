@@ -94,41 +94,6 @@ class COCO:
 
         return annotations
 
-    def calculate_coco_stats(self):
-
-        self.count_objs_per_image = defaultdict(int)
-        self.count_objs_per_categ = defaultdict(int)
-        self.scores_per_categ = defaultdict(float)
-
-        for elem in self.annotations:
-            self.count_objs_per_image[elem.image_id] += 1
-            self.count_objs_per_categ[elem.category_id] += 1
-            self.scores_per_categ[elem.category_id] += 1
-
-        self.avg_obj_per_image = (
-            int(
-                sum(self.count_objs_per_image.values())
-                / len(self.count_objs_per_image.values())
-            )
-            if len(self.count_objs_per_image.values()) > 0
-            else 0
-        )
-        self.min_obj_per_image = (
-            min(self.count_objs_per_image.values()) if self.count_objs_per_image else 0
-        )
-        self.max_obj_per_image = (
-            max(self.count_objs_per_image.values()) if self.count_objs_per_image else 0
-        )
-
-        self.class_scores = {
-            cat_id: (
-                self.scores_per_categ[cat_id] / self.count_objs_per_categ[cat_id]
-                if self.count_objs_per_categ[cat_id] > 0
-                else 0
-            )
-            for cat_id in self.scores_per_categ
-        }
-
     def _check_if_image_exists(self, image_name: str) -> Optional[int]:
         return self.image_names_to_ids.get(image_name)
 
