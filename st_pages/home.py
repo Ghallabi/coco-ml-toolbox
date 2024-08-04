@@ -35,5 +35,9 @@ st.markdown(
     * Per class statistics:
         * X Top / Bottom classes in terms of frequency
         * X Top / Bottom classes in term of class score (if you have coco output from inference job)
+    * Distributions:
+        * Width and height distribution for annotations (bounding boxes)
+        * Width and height distribution for images.
+        
 """
 )
