@@ -6,6 +6,7 @@ from PIL import Image
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
+from typing import List
 
 
 class CocoOps:
@@ -128,3 +129,55 @@ class CocoOps:
                     print(f"Error processing annotation: {e}")
         elapsed_time = time.time() - start_time
         print(f"Completed cropping dataset in {elapsed_time:.2f} seconds")
+
+    def calculate_coco_stats(self) -> dict:
+
+        stats = {}
+        count_objs_per_image = defaultdict(int)
+        count_objs_per_categ = defaultdict(int)
+        scores_per_categ = defaultdict(float)
+
+        ann_width_heights = []
+        img_width_heights_dict = {}
+        for elem in self.coco.images:
+            img_width_heights_dict[elem.id] = [elem.width, elem.height]
+
+        for elem in self.coco.annotations:
+            count_objs_per_image[elem.image_id] += 1
+            count_objs_per_categ[elem.category_id] += 1
+            scores_per_categ[elem.category_id] += 1
+            ann_width_heights.append(
+                [
+                    elem.bbox[2] / img_width_heights_dict[elem.image_id][0],
+                    elem.bbox[3] / img_width_heights_dict[elem.image_id][1],
+                    elem.category_id,
+                ]
+            )
+
+        stats["avg_obj_per_image"] = (
+            int(sum(count_objs_per_image.values()) / len(count_objs_per_image.values()))
+            if len(count_objs_per_image.values()) > 0
+            else 0
+        )
+        stats["min_obj_per_image"] = (
+            min(count_objs_per_image.values()) if count_objs_per_image else 0
+        )
+        stats["max_obj_per_image"] = (
+            max(count_objs_per_image.values()) if count_objs_per_image else 0
+        )
+
+        stats["class_scores"] = {
+            cat_id: (
+                scores_per_categ[cat_id] / count_objs_per_categ[cat_id]
+                if count_objs_per_categ[cat_id] > 0
+                else 0
+            )
+            for cat_id in scores_per_categ
+        }
+        stats["count_objs_per_categ"] = count_objs_per_categ
+        stats["categories"] = [
+            self.coco.cat_ids_to_names[cat_id] for cat_id in count_objs_per_categ.keys()
+        ]
+        stats["ann_width_heights"] = ann_width_heights
+        stats["img_width_heights"] = img_width_heights_dict
+        return stats

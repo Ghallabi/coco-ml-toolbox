@@ -1,10 +1,32 @@
 import streamlit as st
 from cocomltools.models.coco import COCO
+from cocomltools.coco_ops import CocoOps
 from st_pages.utils import coco_file_uploader
 import json
 from collections import defaultdict
 import pandas as pd
 import altair as alt
+
+
+@st.cache_data
+def stats_dict_to_dataframe(stats):
+    counts = list(stats["count_objs_per_categ"].values())
+    scores = list(stats["class_scores"].values())
+    # Create a DataFrame for sorting
+    df = pd.DataFrame(
+        {"Category": stats["categories"], "Count": counts, "Scores": scores}
+    )
+    return df
+
+
+@st.cache_data
+def analyse_coco_input(input_file):
+    coco_ops = CocoOps(
+        COCO.from_dict(json.loads(input_file.getvalue().decode("utf-8")))
+    )
+    stats = coco_ops.calculate_coco_stats()
+    df = stats_dict_to_dataframe(stats)
+    return coco_ops, stats, df
 
 
 class CocoAnalysis:
@@ -17,29 +39,14 @@ class CocoAnalysis:
 
         if st.session_state.files_ready:
 
-            self.coco = COCO.from_dict(
-                json.loads(self.uploaded_files[0].getvalue().decode("utf-8"))
+            self.coco_ops, self.stats, self.df = analyse_coco_input(
+                self.uploaded_files[0]
             )
-            self.coco.calculate_coco_stats()
-            self._aggregate_coco_stats()
             self.display_stats_grid()
 
     def _setup_tabs(self):
         self.tab1, self.tab2, self.tab3 = st.tabs(
-            ["Overview", "Categories", "Performance"]
-        )
-
-    def _aggregate_coco_stats(self):
-
-        category_names = [
-            self.coco.cat_ids_to_names[cat_id]
-            for cat_id in self.coco.count_objs_per_categ.keys()
-        ]
-        counts = list(self.coco.count_objs_per_categ.values())
-        scores = list(self.coco.class_scores.values())
-        # Create a DataFrame for sorting
-        self.df = pd.DataFrame(
-            {"Category": category_names, "Count": counts, "Scores": scores}
+            ["Overview", "Distributions", "Per category stats"]
         )
 
     def display_stats_grid(self):
@@ -47,6 +54,13 @@ class CocoAnalysis:
             self.display_general_stats()
 
         with self.tab2:
+            col1, col2 = st.columns(2)
+            with col1:
+                self.plot_bbox_distribution()
+            with col2:
+                self.plot_img_size_distribution()
+
+        with self.tab3:
             col1, col2 = st.columns(2)
             with col1:
                 self.plot_per_class_count(
@@ -61,17 +75,16 @@ class CocoAnalysis:
                     sort_key="Count",
                 )
 
-        with self.tab3:
             col1, col2 = st.columns(2)
             with col1:
                 self.plot_per_class_count(
-                    top_n=20,
+                    top_n=self.top_k,
                     title=f"Top {self.top_k} Classes (scores)",
                     sort_key="Scores",
                 )
             with col2:
                 self.plot_per_class_count(
-                    bottom_n=20,
+                    bottom_n=self.top_k,
                     title=f"Bottom {self.top_k} Classes (scores)",
                     sort_key="Scores",
                 )
@@ -88,12 +101,12 @@ class CocoAnalysis:
                 "Max objects per image",
             ],
             "Value": [
-                len(self.coco.images),
-                len(self.coco.annotations),
-                len(self.coco.categories),
-                self.coco.avg_obj_per_image,
-                self.coco.min_obj_per_image,
-                self.coco.max_obj_per_image,
+                len(self.coco_ops.coco.images),
+                len(self.coco_ops.coco.annotations),
+                len(self.coco_ops.coco.categories),
+                self.stats["avg_obj_per_image"],
+                self.stats["min_obj_per_image"],
+                self.stats["max_obj_per_image"],
             ],
         }
 
@@ -103,6 +116,38 @@ class CocoAnalysis:
         # Displaying the table with Streamlit
         # st.table(df)
         st.table(df.assign(hack="").set_index("hack"))
+
+    def plot_img_size_distribution(self):
+
+        df = pd.DataFrame(
+            self.stats["img_width_heights"].values(),
+            columns=["Img width", "Img height"],
+        )
+
+        chart = (
+            alt.Chart(df)
+            .mark_circle(size=60)
+            .encode(
+                x="Img width",
+                y="Img height",
+            )
+            .interactive()
+        )
+        st.altair_chart(chart, use_container_width=True)
+
+    def plot_bbox_distribution(self):
+        df = pd.DataFrame(
+            self.stats["ann_width_heights"],
+            columns=["Bbox width", "Bbox height", "Category"],
+        )
+
+        chart = (
+            alt.Chart(df)
+            .mark_circle(size=60)
+            .encode(x="Bbox width", y="Bbox height")
+            .interactive()
+        )
+        st.altair_chart(chart, use_container_width=True)
 
     def plot_per_class_count(
         self, top_n=None, bottom_n=None, title="", sort_key="Count"
