@@ -138,11 +138,9 @@ class CocoOps:
         scores_per_categ = defaultdict(float)
 
         ann_width_heights = []
-        img_width_heights = []
         img_width_heights_dict = {}
         for elem in self.coco.images:
             img_width_heights_dict[elem.id] = [elem.width, elem.height]
-            img_width_heights.append([elem.width, elem.height])
 
         for elem in self.coco.annotations:
             count_objs_per_image[elem.image_id] += 1
@@ -181,5 +179,5 @@ class CocoOps:
             self.coco.cat_ids_to_names[cat_id] for cat_id in count_objs_per_categ.keys()
         ]
         stats["ann_width_heights"] = ann_width_heights
-        stats["img_width_heights"] = img_width_heights
+        stats["img_width_heights"] = img_width_heights_dict
         return stats

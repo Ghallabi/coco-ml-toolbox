@@ -120,7 +120,8 @@ class CocoAnalysis:
     def plot_img_size_distribution(self):
 
         df = pd.DataFrame(
-            self.stats["img_width_heights"], columns=["Img width", "Img height"]
+            self.stats["img_width_heights"].values(),
+            columns=["Img width", "Img height"],
         )
 
         chart = (
