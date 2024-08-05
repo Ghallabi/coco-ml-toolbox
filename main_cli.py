@@ -1,60 +1,5 @@
-from cocomltools.models.coco import COCO
-from cocomltools.coco_ops import CocoOps
-from cocomltools.utils import check_is_json
+from cocomltools.cmd import Cmd
 import argparse
-from pathlib import Path
-
-
-def split_cmd(args):
-
-    coco_path = Path(args.coco_path)
-
-    if not coco_path.is_file():
-        raise FileNotFoundError(f"File not found: {args.coco_path}")
-    if not args.coco_path.endswith(".json"):
-        raise ValueError("Incorrect file format, provide JSON as input")
-
-    coco = COCO.from_json_file(args.coco_path)
-    coco_ops = CocoOps(coco)
-    coco_1, coco_2 = coco_ops.split(ratio=args.ratio, mode=args.mode)
-    if args.output_dir and Path(args.output_dir).is_dir():
-        output_dir = Path(args.output_dir)
-    else:
-        output_dir = Path(args.coco_path).parent
-
-    coco_1.save_coco_dict(output_dir / "coco_train.json")
-    coco_2.save_coco_dict(output_dir / "coco_test.json")
-
-
-def merge_cmd(args):
-    if not all([check_is_json(file) for file in args.coco_paths.split(",")]):
-        raise ValueError("One or more inputs have incorrect format")
-
-    coco_files = args.coco_paths.split(",")
-    coco_base = COCO.from_json_file(coco_files[0])
-    for coco_file in coco_files[1:]:
-        coco = COCO.from_json_file(coco_file)
-        coco_base.extend(coco)
-
-    if args.output_dir and Path(args.output_dir).is_dir():
-        output_dir = Path(args.output_dir)
-    else:
-        output_dir = Path(coco_files[0]).parent
-
-    coco_base.save_coco_dict(output_dir / "coco_merged.json")
-
-
-def crop_cmd(args):
-
-    coco_file = args.coco_path
-    coco = COCO.from_json_file(coco_file)
-    coco_ops = CocoOps(coco)
-    images_dir = Path(args.images_dir)
-    output_dir = (
-        Path(args.output_dir) if args.output_dir else images_dir.parent / "cropped"
-    )
-    output_dir.mkdir(exist_ok=True, parents=True)
-    coco_ops.crop(images_dir, output_dir, max_workers=args.num_workers)
 
 
 def parse_args():
@@ -104,18 +49,23 @@ def parse_args():
         help="number of workers to crop the dataset",
     )
     args = parser.parse_args()
+
+    parser_filter = subparsers.add_parser("filter", help="Split coco file")
+    parser_filter.add_argument(
+        "--coco-path", required=True, type=str, help="Path to coco file"
+    )
+    parser_filter.add_argument(
+        "--categories",
+        required=True,
+        type=str,
+        help="comma separated string of categories to filter",
+    )
+    parser_filter.add_argument(
+        "--output-dir", required=False, type=str, help="Path to save split coco files"
+    )
     return args
-
-
-def main(args):
-    if args.cmd == "split":
-        split_cmd(args)
-    elif args.cmd == "merge":
-        merge_cmd(args)
-    elif args.cmd == "crop":
-        crop_cmd(args)
 
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args)
+    Cmd(args)
