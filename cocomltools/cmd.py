@@ -1,5 +1,4 @@
 from pathlib import Path
-from cocomltools.models.coco import COCO
 from cocomltools.coco_ops import CocoOps
 from cocomltools.utils import check_is_json
 
@@ -19,12 +18,10 @@ class Cmd:
 
         coco_path = Path(args.coco_path)
 
-        if not coco_path.is_file():
-            raise FileNotFoundError(f"File not found: {args.coco_path}")
-        if not args.coco_path.endswith(".json"):
-            raise ValueError("Incorrect file format, provide JSON as input")
+        if not check_is_json(coco_path):
+            raise ValueError("Missing / Incorrect file format, provide JSON as input")
 
-        coco_ops = CocoOps.from_json_file(args.coco_path)
+        coco_ops = CocoOps.from_json_file(coco_path)
         coco_1, coco_2 = coco_ops.split(ratio=args.ratio, mode=args.mode)
         if args.output_dir and Path(args.output_dir).is_dir():
             output_dir = Path(args.output_dir)
@@ -36,6 +33,7 @@ class Cmd:
 
     def merge_cmd(self, args):
         input_files = args.coco_paths.split(",")
+
         coco_merged = CocoOps.merge(input_files)
 
         if args.output_dir and Path(args.output_dir).is_dir():
