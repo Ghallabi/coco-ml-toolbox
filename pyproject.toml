@@ -13,6 +13,7 @@ scikit-learn = "^1.5.1"
 pillow = "^10.4.0"
 scikit-multilearn = "^0.2.0"
 numpy = "^1.26.0"
+rich = "^13.7.1"
 
 
 [tool.poetry.group.app.dependencies]

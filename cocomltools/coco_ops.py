@@ -1,12 +1,14 @@
 from cocomltools.models.coco import COCO
 from cocomltools.models.base import Annotation
 from cocomltools.utils import random_split, mlt_stratified_split
+from cocomltools.logger import logger
 from collections import defaultdict
 from PIL import Image
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 from typing import List
+from cocomltools.utils import check_is_json
 
 
 class CocoOps:
@@ -18,6 +20,107 @@ class CocoOps:
             return self._split(ratio=ratio, mode=mode)
         else:
             return (self.coco, COCO())
+
+    def filter(self, category_names: List[str]) -> COCO:
+        if any(name not in self.coco.cat_names_to_ids for name in category_names):
+            logger.warning(
+                "One of more categories are not in the coco - skip filtering"
+            )
+            return COCO()
+
+        category_ids = set(
+            [self.coco.cat_names_to_ids[name] for name in category_names]
+        )
+        new_annotations = [
+            ann for ann in self.coco.annotations if ann.category_id not in category_ids
+        ]
+
+        return COCO(
+            images=self.coco.images,
+            annotations=new_annotations,
+            categories=self.coco.categories,
+        )
+
+    def crop(
+        self,
+        images_dir: Path,
+        output_dir: Path,
+        max_workers: int = 1,
+    ):
+        if isinstance(images_dir, str):
+            images_dir = Path(images_dir)
+
+        if isinstance(output_dir, str):
+            output_dir = Path(output_dir)
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        start_time = time.time()
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+
+            futures = [
+                executor.submit(self._crop_one_image, elem, images_dir, output_dir)
+                for elem in self.coco.images
+            ]
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                except Exception as e:
+                    print(f"Error processing annotation: {e}")
+        elapsed_time = time.time() - start_time
+        logger.info(f"Completed cropping dataset in {elapsed_time:.2f} seconds")
+
+    def calculate_coco_stats(self) -> dict:
+
+        stats = {}
+        count_objs_per_image = defaultdict(int)
+        count_objs_per_categ = defaultdict(int)
+        scores_per_categ = defaultdict(float)
+
+        ann_width_heights = []
+        img_width_heights_dict = {}
+        for elem in self.coco.images:
+            img_width_heights_dict[elem.id] = [elem.width, elem.height]
+
+        for elem in self.coco.annotations:
+            count_objs_per_image[elem.image_id] += 1
+            count_objs_per_categ[elem.category_id] += 1
+            scores_per_categ[elem.category_id] += 1
+            ann_width_heights.append(
+                [
+                    elem.bbox[2] / img_width_heights_dict[elem.image_id][0],
+                    elem.bbox[3] / img_width_heights_dict[elem.image_id][1],
+                    elem.category_id,
+                ]
+            )
+
+        stats["avg_obj_per_image"] = (
+            int(sum(count_objs_per_image.values()) / len(count_objs_per_image.values()))
+            if len(count_objs_per_image.values()) > 0
+            else 0
+        )
+        stats["min_obj_per_image"] = (
+            min(count_objs_per_image.values()) if count_objs_per_image else 0
+        )
+        stats["max_obj_per_image"] = (
+            max(count_objs_per_image.values()) if count_objs_per_image else 0
+        )
+
+        stats["class_scores"] = {
+            cat_id: (
+                scores_per_categ[cat_id] / count_objs_per_categ[cat_id]
+                if count_objs_per_categ[cat_id] > 0
+                else 0
+            )
+            for cat_id in scores_per_categ
+        }
+        stats["count_objs_per_categ"] = count_objs_per_categ
+        stats["categories"] = [
+            self.coco.cat_ids_to_names[cat_id] for cat_id in count_objs_per_categ.keys()
+        ]
+        stats["ann_width_heights"] = ann_width_heights
+        stats["img_width_heights"] = img_width_heights_dict
+        return stats
 
     def _split(self, ratio: float = 0.2, mode: str = "random"):
         if mode == "random":
@@ -101,83 +204,22 @@ class CocoOps:
         for ann in annotations:
             self._crop_and_save_one_ann(image, ann, output_dir)
 
-    def crop(
-        self,
-        images_dir: Path,
-        output_dir: Path,
-        max_workers: int = 1,
-    ):
-        if isinstance(images_dir, str):
-            images_dir = Path(images_dir)
+    @staticmethod
+    def merge(input_files: List[str]) -> COCO:
+        if any(not check_is_json(file) for file in input_files):
+            raise ValueError("One or more inputs have incorrect format")
+        coco_base = COCO.from_json_file(input_files[0])
+        for coco_file in input_files[1:]:
+            coco = COCO.from_json_file(coco_file)
+            coco_base.extend(coco)
+        return coco_base
 
-        if isinstance(output_dir, str):
-            output_dir = Path(output_dir)
+    @classmethod
+    def from_dict(cls, coco_dict: dict) -> "CocoOps":
+        coco = COCO.from_dict(coco_dict)
+        return CocoOps(coco)
 
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        start_time = time.time()
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-
-            futures = [
-                executor.submit(self._crop_one_image, elem, images_dir, output_dir)
-                for elem in self.coco.images
-            ]
-            for future in as_completed(futures):
-                try:
-                    future.result()
-                except Exception as e:
-                    print(f"Error processing annotation: {e}")
-        elapsed_time = time.time() - start_time
-        print(f"Completed cropping dataset in {elapsed_time:.2f} seconds")
-
-    def calculate_coco_stats(self) -> dict:
-
-        stats = {}
-        count_objs_per_image = defaultdict(int)
-        count_objs_per_categ = defaultdict(int)
-        scores_per_categ = defaultdict(float)
-
-        ann_width_heights = []
-        img_width_heights_dict = {}
-        for elem in self.coco.images:
-            img_width_heights_dict[elem.id] = [elem.width, elem.height]
-
-        for elem in self.coco.annotations:
-            count_objs_per_image[elem.image_id] += 1
-            count_objs_per_categ[elem.category_id] += 1
-            scores_per_categ[elem.category_id] += 1
-            ann_width_heights.append(
-                [
-                    elem.bbox[2] / img_width_heights_dict[elem.image_id][0],
-                    elem.bbox[3] / img_width_heights_dict[elem.image_id][1],
-                    elem.category_id,
-                ]
-            )
-
-        stats["avg_obj_per_image"] = (
-            int(sum(count_objs_per_image.values()) / len(count_objs_per_image.values()))
-            if len(count_objs_per_image.values()) > 0
-            else 0
-        )
-        stats["min_obj_per_image"] = (
-            min(count_objs_per_image.values()) if count_objs_per_image else 0
-        )
-        stats["max_obj_per_image"] = (
-            max(count_objs_per_image.values()) if count_objs_per_image else 0
-        )
-
-        stats["class_scores"] = {
-            cat_id: (
-                scores_per_categ[cat_id] / count_objs_per_categ[cat_id]
-                if count_objs_per_categ[cat_id] > 0
-                else 0
-            )
-            for cat_id in scores_per_categ
-        }
-        stats["count_objs_per_categ"] = count_objs_per_categ
-        stats["categories"] = [
-            self.coco.cat_ids_to_names[cat_id] for cat_id in count_objs_per_categ.keys()
-        ]
-        stats["ann_width_heights"] = ann_width_heights
-        stats["img_width_heights"] = img_width_heights_dict
-        return stats
+    @classmethod
+    def from_json_file(cls, file: str) -> "CocoOps":
+        coco = COCO.from_json_file(file)
+        return CocoOps(coco)
