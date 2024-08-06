@@ -22,6 +22,7 @@ class CocoOps:
             return (self.coco, COCO())
 
     def filter(self, category_names: List[str]) -> COCO:
+
         if any(name not in self.coco.cat_names_to_ids for name in category_names):
             logger.warning(
                 "One of more categories are not in the coco - skip filtering"

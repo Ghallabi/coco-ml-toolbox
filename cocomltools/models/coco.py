@@ -4,6 +4,7 @@ from typing import List, Dict, Optional, Tuple
 from cocomltools.utils import get_max_id_from_seq
 from collections import defaultdict
 from cocomltools.models.base import Image, Annotation, Category
+from cocomltools.logger import logger
 
 
 class COCO:
@@ -37,8 +38,45 @@ class COCO:
         self.cat_ids_to_names = {elem.id: elem.name for elem in self.categories}
 
         self.image_ids_to_anns = defaultdict(list)
+        self.image_ids_to_ann_count = defaultdict(int)
         for ann in self.annotations:
             self.image_ids_to_anns[ann.image_id].append(ann)
+            self.image_ids_to_ann_count[ann.image_id] += 1
+
+    def remove_image_from_coco(self, image_name: str):
+        if image_name not in self.image_names_to_ids:
+            logger.error(f"No image found with {image_name} in coco")
+            return
+        image_id = self.image_names_to_ids[image_name]
+        new_images = [elem for elem in self.images if elem.id != image_id]
+        new_annotations = [
+            elem for elem in self.annotations if elem.image_id != image_id
+        ]
+        self.images = new_images
+        self.annotations = new_annotations
+
+    def remove_category_from_coco(self, category_name: str):
+        if category_name not in self.cat_names_to_ids:
+            logger.error(f"No category found with {category_name} in coco")
+            return
+        categ_id = self.cat_names_to_ids[category_name]
+        new_categories = [elem for elem in self.categories if elem.id != categ_id]
+        new_annotations = []
+        empty_images_names = set()
+        for elem in self.annotations:
+            if elem.category_id == categ_id:
+                self.image_ids_to_ann_count[elem.image_id] -= 1
+                if self.image_ids_to_ann_count[elem.image_id] == 0:
+                    empty_images_names.add(self.image_ids_to_names[elem.image_id])
+                continue
+            new_annotations.append(elem)
+
+        # Remove images with no annotations
+        for image_name in empty_images_names:
+            self.remove_image_from_coco(image_name)
+
+        self.categories = new_categories
+        self.annotations = new_annotations
 
     def add_image_to_coco(self, elem: Image) -> int:
 
