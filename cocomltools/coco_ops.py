@@ -21,24 +21,17 @@ class CocoOps:
         else:
             return (self.coco, COCO())
 
-    def filter(self, category_names: List[str]) -> COCO:
-
-        if any(name not in self.coco.cat_names_to_ids for name in category_names):
-            logger.warning(
-                "One of more categories are not in the coco - skip filtering"
-            )
-            return COCO()
-
-        category_ids = set(
-            [self.coco.cat_names_to_ids[name] for name in category_names]
-        )
-        new_annotations = [
-            ann for ann in self.coco.annotations if ann.category_id not in category_ids
-        ]
+    def filter(self, category_names: List[str] = None, image_names: List[str] = None):
+        if category_names:
+            for category_name in category_names:
+                self.coco.remove_category_from_coco(category_name)
+        if image_names:
+            for image_name in image_names:
+                self.coco.remove_image_from_coco(image_name)
 
         return COCO(
             images=self.coco.images,
-            annotations=new_annotations,
+            annotations=self.coco.annotations,
             categories=self.coco.categories,
         )
 

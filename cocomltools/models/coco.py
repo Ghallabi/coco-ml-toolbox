@@ -45,7 +45,7 @@ class COCO:
 
     def remove_image_from_coco(self, image_name: str):
         if image_name not in self.image_names_to_ids:
-            logger.error(f"No image found with {image_name} in coco")
+            logger.warning(f"No image found with {image_name} in coco - skipping")
             return
         image_id = self.image_names_to_ids[image_name]
         new_images = [elem for elem in self.images if elem.id != image_id]
@@ -57,7 +57,7 @@ class COCO:
 
     def remove_category_from_coco(self, category_name: str):
         if category_name not in self.cat_names_to_ids:
-            logger.error(f"No category found with {category_name} in coco")
+            logger.warning(f"No category found with {category_name} in coco - skipping")
             return
         categ_id = self.cat_names_to_ids[category_name]
         new_categories = [elem for elem in self.categories if elem.id != categ_id]
