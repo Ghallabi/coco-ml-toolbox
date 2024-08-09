@@ -43,18 +43,6 @@ class COCO:
             self.image_ids_to_anns[ann.image_id].append(ann)
             self.image_ids_to_ann_count[ann.image_id] += 1
 
-    def remove_image_from_coco(self, image_name: str):
-        if image_name not in self.image_names_to_ids:
-            logger.warning(f"No image found with {image_name} in coco - skipping")
-            return
-        image_id = self.image_names_to_ids[image_name]
-        new_images = [elem for elem in self.images if elem.id != image_id]
-        new_annotations = [
-            elem for elem in self.annotations if elem.image_id != image_id
-        ]
-        self.images = new_images
-        self.annotations = new_annotations
-
     def remove_category_from_coco(self, category_name: str):
         if category_name not in self.cat_names_to_ids:
             logger.warning(f"No category found with {category_name} in coco - skipping")
@@ -92,6 +80,18 @@ class COCO:
         self.image_names_to_ids = {elem.file_name: elem.id for elem in self.images}
         self.image_ids_to_names = {elem.id: elem.file_name for elem in self.images}
         return new_id
+
+    def remove_image_from_coco(self, image_name: str):
+        if image_name not in self.image_names_to_ids:
+            logger.warning(f"No image found with {image_name} in coco - skipping")
+            return
+        image_id = self.image_names_to_ids[image_name]
+        new_images = [elem for elem in self.images if elem.id != image_id]
+        new_annotations = [
+            elem for elem in self.annotations if elem.image_id != image_id
+        ]
+        self.images = new_images
+        self.annotations = new_annotations
 
     def add_ann_to_coco(
         self, elem: Annotation, new_image_id: int, new_category_id: int
