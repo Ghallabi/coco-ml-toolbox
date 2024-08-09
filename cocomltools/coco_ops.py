@@ -79,7 +79,7 @@ class CocoOps:
         for elem in self.coco.annotations:
             count_objs_per_image[elem.image_id] += 1
             count_objs_per_categ[elem.category_id] += 1
-            scores_per_categ[elem.category_id] += 1
+            scores_per_categ[elem.category_id] += elem.score
             ann_width_heights.append(
                 [
                     elem.bbox[2] / img_width_heights_dict[elem.image_id][0],
