@@ -16,7 +16,16 @@ def stats_dict_to_dataframe(stats):
     df = pd.DataFrame(
         {"Category": stats["categories"], "Count": counts, "Scores": scores}
     )
-    return df
+
+    df_img = pd.DataFrame(
+        stats["img_width_heights"].values(),
+        columns=["Img width", "Img height"],
+    )
+    df_ann = pd.DataFrame(
+        stats["ann_width_heights"],
+        columns=["Bbox width", "Bbox height", "Category"],
+    )
+    return df, df_img, df_ann
 
 
 @st.cache_data
@@ -25,8 +34,8 @@ def analyse_coco_input(input_file):
         COCO.from_dict(json.loads(input_file.getvalue().decode("utf-8")))
     )
     stats = coco_ops.calculate_coco_stats()
-    df = stats_dict_to_dataframe(stats)
-    return coco_ops, stats, df
+    df, df_img, df_ann = stats_dict_to_dataframe(stats)
+    return coco_ops, stats, df, df_img, df_ann
 
 
 class CocoAnalysis:
@@ -39,8 +48,8 @@ class CocoAnalysis:
 
         if st.session_state.files_ready:
 
-            self.coco_ops, self.stats, self.df = analyse_coco_input(
-                self.uploaded_files[0]
+            self.coco_ops, self.stats, self.df, self.df_img, self.df_ann = (
+                analyse_coco_input(self.uploaded_files[0])
             )
             self.display_stats_grid()
 
@@ -56,9 +65,15 @@ class CocoAnalysis:
         with self.tab2:
             col1, col2 = st.columns(2)
             with col1:
-                self.plot_bbox_distribution()
+                self.plot_img_height_distribution()
             with col2:
-                self.plot_img_size_distribution()
+                self.plot_img_width_distribution()
+
+            col3, col4 = st.columns(2)
+            with col3:
+                self.plot_bbox_height_distribution()
+            with col4:
+                self.plot_bbox_width_distribution()
 
         with self.tab3:
             col1, col2 = st.columns(2)
@@ -117,36 +132,48 @@ class CocoAnalysis:
         # st.table(df)
         st.table(df.assign(hack="").set_index("hack"))
 
-    def plot_img_size_distribution(self):
-
-        df = pd.DataFrame(
-            self.stats["img_width_heights"].values(),
-            columns=["Img width", "Img height"],
-        )
+    def plot_img_width_distribution(self):
 
         chart = (
-            alt.Chart(df)
-            .mark_circle(size=60)
-            .encode(
-                x="Img width",
-                y="Img height",
-            )
+            alt.Chart(self.df_img)
+            .mark_bar(color="purple")
+            .encode(alt.X("Img width:Q", bin=True), y="count()")
             .interactive()
         )
+
         st.altair_chart(chart, use_container_width=True)
 
-    def plot_bbox_distribution(self):
-        df = pd.DataFrame(
-            self.stats["ann_width_heights"],
-            columns=["Bbox width", "Bbox height", "Category"],
-        )
+    def plot_img_height_distribution(self):
 
         chart = (
-            alt.Chart(df)
-            .mark_circle(size=60)
-            .encode(x="Bbox width", y="Bbox height")
+            alt.Chart(self.df_img)
+            .mark_bar(color="purple")
+            .encode(alt.X("Img height:Q", bin=True), y="count()")
             .interactive()
         )
+
+        st.altair_chart(chart, use_container_width=True)
+
+    def plot_bbox_width_distribution(self):
+
+        chart = (
+            alt.Chart(self.df_ann)
+            .mark_bar(color="pink")
+            .encode(alt.X("Bbox width:Q", bin=True), y="count()")
+            .interactive()
+        )
+
+        st.altair_chart(chart, use_container_width=True)
+
+    def plot_bbox_height_distribution(self):
+
+        chart = (
+            alt.Chart(self.df_ann)
+            .mark_bar(color="pink")
+            .encode(alt.X("Bbox height:Q", bin=True), y="count()")
+            .interactive()
+        )
+
         st.altair_chart(chart, use_container_width=True)
 
     def plot_per_class_count(

@@ -9,7 +9,7 @@ st.markdown(
 
     This app provides essential tools for managing COCO (Common Objects in Context) files during the ML lifecycle. It features two main tools: Split and Merge.
 
-    ## :screwdriver: Tools
+    ## Tools :screwdriver:
 
     #### Split Tool
 
@@ -29,7 +29,7 @@ st.markdown(
     2. **Merge Files**: The tool combines all uploaded coco files into a single COCO file.
 
 
-    ## :bar_chart: Statistics
+    ##  Statistics :bar_chart:
     Upload a coco file to get insights about the following statistics:
     * Overal statistics such as number of images, number of annotations, number of categories. etc.
     * Per class statistics:
