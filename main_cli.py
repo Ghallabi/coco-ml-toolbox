@@ -4,7 +4,7 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        prog="coco-ml-cli", description="COCO tools for Machine Learning"
+        prog="cocomltools-cli", description="COCO tools for Machine Learning"
     )
     subparsers = parser.add_subparsers(dest="cmd")
     parser_split = subparsers.add_parser("split", help="Split coco file")
