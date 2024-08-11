@@ -17,7 +17,6 @@ class Cmd:
     def split_cmd(self, args):
 
         coco_path = Path(args.coco_path)
-
         if not check_is_json(coco_path):
             raise ValueError("Missing / Incorrect file format, provide JSON as input")
 

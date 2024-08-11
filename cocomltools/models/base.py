@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Union
 
 
 class Image(BaseModel):
@@ -15,7 +15,7 @@ class Annotation(BaseModel):
     category_id: int
     score: float = Field(default=1.0)
     bbox: List[float]
-    segmentation: List[float] | List[List[float]] = Field(default=[])
+    segmentation: Union[List[float], List[List[float]]] = Field(default=[])
     area: float
     iscrowd: int = Field(default=0)
 
