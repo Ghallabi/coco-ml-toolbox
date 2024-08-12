@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cocomltools"
-version = "0.1.6-dev"
+version = "0.1.7"
 description = ""
 authors = ["Ghallabi <ghallabi.farouk@gmail.com>"]
 readme = "README.md"
@@ -24,7 +24,11 @@ streamlit = "^1.37.0"
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.2"
 
+[tool.poetry.scripts]
+cocoml = "cocomltools.main_cli:main"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+

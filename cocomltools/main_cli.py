@@ -66,6 +66,10 @@ def parse_args():
     return args
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
     Cmd(args)
+
+
+if __name__ == "__main__":
+    main()
