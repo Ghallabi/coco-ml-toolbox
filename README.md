@@ -30,15 +30,14 @@ poetry install
 ```
 
 ## Usage
-
-The main script for the COCO ML Toolbox provides three commands: split, merge, and crop. Below are the details on how to use each command.
+We provide a CLI that comes with three main commands: split, merge, and crop. Below are the details on how to use each command.
 
 ### Split
 
 Splits a COCO dataset into training and testing datasets.
 
 ```bash
-python main_cli.py split --coco-path /path/to/coco.json --output-dir /path/to/output --ratio 0.2 --mode random
+cocoml split --coco-path /path/to/coco.json --output-dir /path/to/output --ratio 0.2 --mode random
 ```
 
 * --coco-path: Path to the COCO file (JSON).
@@ -52,7 +51,7 @@ python main_cli.py split --coco-path /path/to/coco.json --output-dir /path/to/ou
 Merges multiple COCO dataset files into a single file.
 
 ```bash
-python main_cli.py merge --coco-paths /path/to/coco1.json,/path/to/coco2.json --output-dir /path/to/output
+cocoml merge --coco-paths /path/to/coco1.json,/path/to/coco2.json --output-dir /path/to/output
 ```
 
 * --coco-paths: Comma-separated paths to the COCO files (JSON).
@@ -62,7 +61,7 @@ python main_cli.py merge --coco-paths /path/to/coco1.json,/path/to/coco2.json --
 Crops images based on annotations in a COCO dataset.
 
 ```bash
-python main_cli.py crop --coco-path /path/to/coco.json --images-dir /path/to/images --output-dir /path/to/cropped_images --num-workers MAX_WORKERS
+cocoml crop --coco-path /path/to/coco.json --images-dir /path/to/images --output-dir /path/to/cropped_images --num-workers MAX_WORKERS
 ```
 
 * --coco-path: Path to the COCO file (JSON).
