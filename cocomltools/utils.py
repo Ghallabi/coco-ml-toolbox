@@ -6,6 +6,14 @@ from typing import List
 import random
 from skmultilearn.model_selection import iterative_train_test_split
 import numpy as np
+from PIL import Image, ImageOps
+
+
+def load_pil_image(img_path: str) -> Image.Image:
+    img = Image.open(img_path).convert("RGB")
+    img = ImageOps.exif_transpose(img)
+
+    return img
 
 
 def check_is_json(file_path: str) -> bool:

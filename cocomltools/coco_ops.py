@@ -8,7 +8,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 from typing import List
-from cocomltools.utils import check_is_json
+from cocomltools.utils import check_is_json, load_pil_image
 
 
 class CocoOps:
@@ -194,7 +194,7 @@ class CocoOps:
         annotations = self.coco.get_annotation_by_image_id(elem.id)
         if len(annotations) == 0:  # if no annotations, skip
             return
-        image = Image.open(file_image).convert("RGB")
+        image = load_pil_image(file_image)
         for ann in annotations:
             self._crop_and_save_one_ann(image, ann, output_dir)
 
