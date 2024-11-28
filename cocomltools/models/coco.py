@@ -51,13 +51,16 @@ class COCO:
         new_categories = [elem for elem in self.categories if elem.id != categ_id]
         new_annotations = []
         empty_images_names = set()
-        for elem in self.annotations:
-            if elem.category_id == categ_id:
-                self.image_ids_to_ann_count[elem.image_id] -= 1
-                if self.image_ids_to_ann_count[elem.image_id] == 0:
-                    empty_images_names.add(self.image_ids_to_names[elem.image_id])
-                continue
-            new_annotations.append(elem)
+        for image_id, image_anns in self.image_ids_to_anns.items():
+            for ann in image_anns:
+                if ann.category_id == categ_id:
+                    image_anns.remove(ann)
+                    self.image_ids_to_ann_count[image_id] -= 1
+
+            if len(image_anns) == 0:
+                empty_images_names.add(self.image_ids_to_names[image_id])
+            else:
+                new_annotations.extend(image_anns)
 
         # Remove images with no annotations
         for image_name in empty_images_names:
