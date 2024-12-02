@@ -1,5 +1,4 @@
 from cocomltools.models.coco import COCO
-from cocomltools.models.base import Annotation
 from collections import defaultdict
 
 
@@ -8,13 +7,6 @@ class COCOMetrics:
     def __init__(self, ground_truth_coco_file: str, predictions_coco_file: str):
         self.coco_ground_truth = COCO.from_json_file(ground_truth_coco_file)
         self.coco_predictions = COCO.from_json_file(predictions_coco_file)
-        print(
-            f"Number of annotations before removing {len(self.coco_ground_truth.annotations)}"
-        )
-        # self.coco_ground_truth.remove_category_from_coco("unknown")
-        print(
-            f"Number of annotations after removing {len(self.coco_ground_truth.annotations)}"
-        )
         self.iou_threshold = 0.5
 
     def _iou(self, box1, box2) -> float:
@@ -33,6 +25,15 @@ class COCOMetrics:
 
     def evaluate(self) -> dict:
         results = defaultdict(list)
+        per_class_metrics = {
+            self.coco_ground_truth.cat_ids_to_names[categ_id]: {
+                "TP": 0,
+                "FP": 0,
+                "FN": 0,
+                "all": count,
+            }
+            for categ_id, count in self.coco_ground_truth.category_ids_to_ann_count.items()
+        }
         for image_id, preds in self.coco_predictions.image_ids_to_anns.items():
             file_name = self.coco_predictions.image_ids_to_names[image_id]
             gt_image_id = self.coco_ground_truth.image_names_to_ids[file_name]
@@ -55,13 +56,37 @@ class COCOMetrics:
                             best_gt_idx = idx
 
                 if best_iou >= self.iou_threshold:
+                    if categ_name_pred in per_class_metrics.keys():
+                        per_class_metrics[categ_name_pred]["TP"] += 1
                     results["TP"].append(1)
                     gt_matched[best_gt_idx] = True
                 else:
+                    if categ_name_pred in per_class_metrics.keys():
+                        per_class_metrics[categ_name_pred]["FP"] += 1
                     results["FP"].append(1)
 
-            # Count unmatched ground truths as false negatives
-            results["FN"].extend([1 for matched in gt_matched if not matched])
+            for idx, matched in enumerate(gt_matched):
+                if not matched:
+                    categ_name_gt = self.coco_ground_truth.cat_ids_to_names[
+                        gt_anns[idx].category_id
+                    ]
+                    if categ_name_gt in per_class_metrics.keys():
+                        per_class_metrics[categ_name_gt]["FN"] += 1
+                    results["FN"].append(1)
+
+        # per class metrics
+        for stats in per_class_metrics.values():
+            stats["Precision"] = (
+                stats["TP"] / (stats["TP"] + stats["FP"])
+                if (stats["TP"] + stats["FP"]) > 0
+                else 0
+            )
+            stats["Recall"] = (
+                stats["TP"] / (stats["TP"] + stats["FN"])
+                if (stats["TP"] + stats["FN"]) > 0
+                else 0
+            )
+            # stats['Recall'] = TP / (TP + FN)
 
         # Calculate precision and recall
         TP = sum(results["TP"])
@@ -76,23 +101,4 @@ class COCOMetrics:
         results["Recall"] = recall
         results["mAP"] = precision  # Simplified for single IoU threshold
 
-        return results
-
-
-if __name__ == "__main__":
-    from pathlib import Path
-
-    coco_gt_path = Path(
-        "/Users/faroukneurolabs/dev-ws/coco-ml-toolbox/data/evals/coco_ground_truth.json"
-    )
-    coco_pred_path = Path(
-        "/Users/faroukneurolabs/dev-ws/coco-ml-toolbox/data/evals/coco_predictions.json"
-    )
-
-    coco_metrics = COCOMetrics(
-        predictions_coco_file=coco_pred_path, ground_truth_coco_file=coco_gt_path
-    )
-    results = coco_metrics.evaluate()
-    print(
-        f"Precision: {results['Precision']}, Recall: {results['Recall']}, mAP: {results['mAP']}"
-    )
+        return results, per_class_metrics

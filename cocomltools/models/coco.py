@@ -39,9 +39,11 @@ class COCO:
 
         self.image_ids_to_anns = defaultdict(list)
         self.image_ids_to_ann_count = defaultdict(int)
+        self.category_ids_to_ann_count = defaultdict(int)
         for ann in self.annotations:
             self.image_ids_to_anns[ann.image_id].append(ann)
             self.image_ids_to_ann_count[ann.image_id] += 1
+            self.category_ids_to_ann_count[ann.category_id] += 1
 
     def remove_category_from_coco(self, category_name: str):
         if category_name not in self.cat_names_to_ids:
