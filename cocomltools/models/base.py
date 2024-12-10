@@ -16,7 +16,7 @@ class Annotation(BaseModel):
     score: float = Field(default=1.0)
     bbox: List[float]
     segmentation: Union[List[float], List[List[float]]] = Field(default=[])
-    area: float
+    area: float = Field(default=0)
     iscrowd: int = Field(default=0)
 
 

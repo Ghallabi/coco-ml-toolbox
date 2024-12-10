@@ -7,7 +7,6 @@ class COCOMetrics:
     def __init__(self, ground_truth_coco_file: str, predictions_coco_file: str):
         self.coco_ground_truth = COCO.from_json_file(ground_truth_coco_file)
         self.coco_predictions = COCO.from_json_file(predictions_coco_file)
-        self.iou_threshold = 0.5
 
     def _iou(self, box1, box2) -> float:
         x1 = max(box1[0], box2[0])
@@ -23,7 +22,7 @@ class COCOMetrics:
         union_area = box1_area + box2_area - inter_area
         return inter_area / union_area if union_area > 0 else 0
 
-    def evaluate(self) -> dict:
+    def evaluate(self, iou_threshold: float = 0.5) -> dict:
         results = defaultdict(list)
         per_class_metrics = {
             self.coco_ground_truth.cat_ids_to_names[categ_id]: {
@@ -55,7 +54,7 @@ class COCOMetrics:
                             best_iou = iou
                             best_gt_idx = idx
 
-                if best_iou >= self.iou_threshold:
+                if best_iou >= iou_threshold:
                     if categ_name_pred in per_class_metrics.keys():
                         per_class_metrics[categ_name_pred]["TP"] += 1
                     results["TP"].append(1)
